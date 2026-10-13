@@ -32,10 +32,6 @@ extends RefCounted
 # With neither (the defaults), the states are cut straight out of the sheet at
 # 1x -- how the Next Level / Continue button uses it.
 #
-# Like every other piece of art in the project it's optional: if
-# assets/buttons.png is missing, apply() leaves the button alone and returns
-# false, so it just keeps the default look.
-#
 # To use a different button from the sheet, change the four regions below
 # (x, y, width, height in the sheet's own pixels) and, if its border is
 # thicker or thinner, the margins.
@@ -78,15 +74,12 @@ const PARCHMENT_SHADOW_COLOR: Color = Color(205.0 / 255.0, 166.0 / 255.0, 119.0 
 # buttons doesn't rebuild the same textures.
 static var _style_cache: Dictionary = {}
 
-# Returns true if the skin was applied. shadow_color with alpha 0 (the default)
-# keeps the sheet's own shadow.
-static func apply(button: Button, pixel_scale: int = 1, shadow_color: Color = Color(0, 0, 0, 0)) -> bool:
+# shadow_color with alpha 0 (the default) keeps the sheet's own shadow.
+static func apply(button: Button, pixel_scale: int = 1, shadow_color: Color = Color(0, 0, 0, 0)) -> void:
 	var cache_key: String = "%d|%s" % [pixel_scale, shadow_color.to_html()]
 	var styles: Dictionary = _style_cache.get(cache_key, {})
 	if styles.is_empty():
-		var sheet: Texture2D = AssetLoader.load_optional_texture("res://assets/" + SHEET_FILE)
-		if sheet == null:
-			return false
+		var sheet: Texture2D = AssetLoader.load_texture("res://assets/" + SHEET_FILE)
 		styles = _make_styles(sheet, pixel_scale, shadow_color)
 		_style_cache[cache_key] = styles
 
@@ -104,7 +97,6 @@ static func apply(button: Button, pixel_scale: int = 1, shadow_color: Color = Co
 		button.add_theme_color_override(color_name, TEXT_COLOR)
 
 	button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST  # keep the pixel art crisp
-	return true
 
 static func _make_styles(sheet: Texture2D, pixel_scale: int, shadow_color: Color) -> Dictionary:
 	var states: Dictionary = {

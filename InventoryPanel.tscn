@@ -37,43 +37,6 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Fallback" type="Control" parent="Dim/Frame" unique_id=2114315810]
-unique_name_in_owner = true
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-
-[node name="Border" type="ColorRect" parent="Dim/Frame/Fallback" unique_id=747288086]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-color = Color(0.376471, 0.223529, 0.156863, 1)
-
-[node name="Body" type="ColorRect" parent="Dim/Frame/Fallback" unique_id=1435011941]
-layout_mode = 0
-offset_left = 10.0
-offset_top = 38.0
-offset_right = 630.0
-offset_bottom = 438.0
-mouse_filter = 2
-color = Color(0.898039, 0.839216, 0.631373, 1)
-
-[node name="Bar" type="ColorRect" parent="Dim/Frame/Fallback" unique_id=1744370270]
-layout_mode = 0
-offset_right = 640.0
-offset_bottom = 36.0
-mouse_filter = 2
-color = Color(0.313726, 0.662745, 0.470588, 1)
-
 [node name="Art" type="TextureRect" parent="Dim/Frame" unique_id=165936141]
 unique_name_in_owner = true
 texture_filter = 1

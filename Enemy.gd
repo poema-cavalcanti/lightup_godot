@@ -11,7 +11,6 @@ const ENEMY_MAX_HEALTH: int = 10
 const ENEMY_ATTACK_DAMAGE: int = 5
 const ENEMY_MOVE_INTERVAL: float = 0.7
 const ENEMY_ATTACK_INTERVAL: float = 1.0
-const ENEMY_COLOR: Color = Color(0.75, 0.1, 0.1)
 const MOVE_DIRECTIONS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
 const BOSS_MAX_HEALTH: int = 50
@@ -559,16 +558,17 @@ func _draw_enemies() -> void:
 			var source_rectangle: Rect2 = Rect2(Vector2(frame_index * frame_size.x, row * frame_size.y), frame_size)
 			game.draw_texture_rect_region(active_sheet, destination_rectangle, source_rectangle, Color(1, 1, 1, render_alpha))
 		else:
-			var static_texture: Texture2D = _get_boss_texture() if is_boss else game.enemy_texture
+			# Only a boss can get here (boss tier 4 has no art yet): static image,
+			# then a plain drawn shape. Regular enemies always have their sheets.
+			var static_texture: Texture2D = _get_boss_texture()
 			if static_texture != null:
 				game.draw_texture_rect(static_texture, destination_rectangle, false, Color(1, 1, 1, render_alpha))
 			else:
-				var body_radius: float = game.CELL_SIZE * (0.35 if is_boss else 0.22) * render_scale
-				var body_color: Color = game.BOSS_COLOR if is_boss else ENEMY_COLOR
+				var body_radius: float = game.CELL_SIZE * 0.35 * render_scale
+				var body_color: Color = game.BOSS_COLOR
 				body_color.a = render_alpha
-				var outline_width: float = 3.0 if is_boss else 2.0
 				game.draw_circle(body_center, body_radius, body_color)
-				game.draw_arc(body_center, body_radius, 0.0, TAU, 16 if is_boss else 12, Color(body_color.darkened(0.5), render_alpha), outline_width)
+				game.draw_arc(body_center, body_radius, 0.0, TAU, 16, Color(body_color.darkened(0.5), render_alpha), 3.0)
 
 		if attack_flash > 0.0 and not is_dying:
 			var flash_radius: float = game.CELL_SIZE * (0.5 if is_boss else 0.35) * (1.0 + 0.5 * (1.0 - attack_flash))

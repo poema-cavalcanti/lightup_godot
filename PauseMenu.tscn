@@ -1,17 +1,9 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=3 format=3]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_clear"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover"]
 bg_color = Color(1, 1, 1, 0.22)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fallback"]
-bg_color = Color(0.898039, 0.839216, 0.631373, 1)
-border_width_left = 6
-border_width_top = 6
-border_width_right = 6
-border_width_bottom = 6
-border_color = Color(0.376471, 0.223529, 0.156863, 1)
 
 [node name="PauseMenu" type="CanvasLayer"]
 layer = 10
@@ -52,18 +44,6 @@ offset_bottom = 198.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-
-[node name="MainFallback" type="Panel" parent="Dim/MainView/MainPanel"]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-visible = false
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_fallback")
 
 [node name="MainArt" type="TextureRect" parent="Dim/MainView/MainPanel"]
 unique_name_in_owner = true
@@ -213,18 +193,6 @@ offset_bottom = 210.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-
-[node name="SettingsFallback" type="Panel" parent="Dim/SettingsView/SettingsPanel"]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-visible = false
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_fallback")
 
 [node name="SettingsArt" type="TextureRect" parent="Dim/SettingsView/SettingsPanel"]
 unique_name_in_owner = true

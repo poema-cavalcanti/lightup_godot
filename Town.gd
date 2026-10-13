@@ -71,7 +71,6 @@ const PLAYER_TINT: Color = Color(0.15, 0.65, 0.95)  # same as P1 in-level (Playe
 const SHOP_CARD_SCENE: PackedScene = preload("res://ShopItemCard.tscn")
 const SHOP_CARD_TEXT_LEFT_WITHOUT_ICON: float = 16.0  # where a card's text starts when the item has no icon (with one it's in the scene)
 
-var player_sheet_texture: Texture2D
 var player_idle_sheet_texture: Texture2D
 var player_run_sheet_texture: Texture2D
 
@@ -113,18 +112,14 @@ func _ready() -> void:
 	grid_rows = TOWN_GRID.size()
 	grid_cols = TOWN_GRID[0].length()
 	SettingsManager.apply_window_size(int(grid_cols * TILE_SIZE), int(grid_rows * TILE_SIZE))
-	player_sheet_texture = _load_optional_texture("player_sheet.png")
-	player_idle_sheet_texture = _load_optional_texture("player_idle_sheet.png")
-	player_run_sheet_texture = _load_optional_texture("player_run_sheet.png")
+	player_idle_sheet_texture = AssetLoader.load_texture("res://assets/player_idle_sheet.png")
+	player_run_sheet_texture = AssetLoader.load_texture("res://assets/player_run_sheet.png")
 	visual_position = Vector2(player_col, player_row)
 	animation_from = visual_position
 	animation_to = visual_position
 	%YesButton.pressed.connect(_on_confirm_yes_pressed)
 	%NoButton.pressed.connect(_on_confirm_no_pressed)
 	%ShopCloseButton.pressed.connect(_on_shop_close_pressed)
-
-func _load_optional_texture(filename: String) -> Texture2D:
-	return AssetLoader.load_optional_texture("res://assets/" + filename)
 
 func _process(delta: float) -> void:
 	_advance_animation(delta)
@@ -138,7 +133,7 @@ func _advance_animation(delta: float) -> void:
 		var eased_progress: float = ease(animation_progress, -2.0)
 		visual_position = animation_from.lerp(animation_to, eased_progress)
 
-		var run_frame_count: int = PLAYER_RUN_SHEET_FRAME_COUNT if player_run_sheet_texture != null else PLAYER_SHEET_FRAME_COUNT
+		var run_frame_count: int = PLAYER_RUN_SHEET_FRAME_COUNT
 		animation_timer += delta
 		if animation_timer >= PLAYER_ANIMATION_FRAME_DURATION:
 			animation_timer = 0.0
@@ -362,53 +357,44 @@ func _draw_player(grid_origin: Vector2) -> void:
 	var body_center: Vector2 = GridGeometry.tile_center_to_pixel(visual_position.y, visual_position.x, grid_origin, TILE_SIZE)
 
 	var is_moving: bool = animation_progress < 1.0
-	var active_texture: Texture2D = null
-	var active_frame_index: int = 0
+	var active_texture: Texture2D
+	var active_frame_index: int
 	# Which sheet kind is showing, for picking the matching equipped-armor
 	# overlay art and offset -- see Player.gd's _draw_players.
-	var overlay_kind: String = ""
-	if is_moving and player_run_sheet_texture != null:
+	var overlay_kind: String
+	if is_moving:
 		active_texture = player_run_sheet_texture
 		active_frame_index = animation_frame_index
 		overlay_kind = "run"
-	elif not is_moving and player_idle_sheet_texture != null:
+	else:
 		active_texture = player_idle_sheet_texture
 		active_frame_index = idle_frame_index
 		overlay_kind = "idle"
-	elif player_sheet_texture != null:
-		active_texture = player_sheet_texture
-		active_frame_index = animation_frame_index if is_moving else 0
-		overlay_kind = "walk"
 
-	if active_texture != null:
-		var source_direction: String = "right" if facing_direction == "left" else facing_direction
-		var direction_row: int = PLAYER_SHEET_DIRECTION_ROWS.get(source_direction, 0)
-		var source_rectangle: Rect2 = Rect2(
-			active_frame_index * PLAYER_SHEET_FRAME_WIDTH,
-			direction_row * PLAYER_SHEET_FRAME_HEIGHT,
-			PLAYER_SHEET_FRAME_WIDTH,
-			PLAYER_SHEET_FRAME_HEIGHT
-		)
-		var sprite_size: float = TILE_SIZE * 0.9
-		var destination_rectangle: Rect2 = Rect2(
-			body_center.x - sprite_size / 2.0, body_center.y - sprite_size / 2.0,
-			sprite_size, sprite_size
-		)
-		var flip_horizontally: bool = facing_direction == "left"
-		if flip_horizontally:
-			# Same mirror-via-canvas-transform approach as Player.gd (see the
-			# comment there for why not a negative-width source rect): rects
-			# drawn while it's active are relative to body_center.
-			draw_set_transform(body_center, 0.0, Vector2(-1.0, 1.0))
-			destination_rectangle.position -= body_center
-		draw_texture_rect_region(active_texture, destination_rectangle, source_rectangle, PLAYER_TINT)
-		if overlay_kind != "":
-			_draw_equipped_armor_overlay(overlay_kind, active_frame_index, destination_rectangle)
-		if flip_horizontally:
-			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	else:
-		draw_circle(body_center, TILE_SIZE * 0.3, PLAYER_TINT)
-		draw_arc(body_center, TILE_SIZE * 0.3, 0.0, TAU, 16, PLAYER_TINT.darkened(0.5), 3.0)
+	var source_direction: String = "right" if facing_direction == "left" else facing_direction
+	var direction_row: int = PLAYER_SHEET_DIRECTION_ROWS.get(source_direction, 0)
+	var source_rectangle: Rect2 = Rect2(
+		active_frame_index * PLAYER_SHEET_FRAME_WIDTH,
+		direction_row * PLAYER_SHEET_FRAME_HEIGHT,
+		PLAYER_SHEET_FRAME_WIDTH,
+		PLAYER_SHEET_FRAME_HEIGHT
+	)
+	var sprite_size: float = TILE_SIZE * 0.9
+	var destination_rectangle: Rect2 = Rect2(
+		body_center.x - sprite_size / 2.0, body_center.y - sprite_size / 2.0,
+		sprite_size, sprite_size
+	)
+	var flip_horizontally: bool = facing_direction == "left"
+	if flip_horizontally:
+		# Same mirror-via-canvas-transform approach as Player.gd (see the
+		# comment there for why not a negative-width source rect): rects
+		# drawn while it's active are relative to body_center.
+		draw_set_transform(body_center, 0.0, Vector2(-1.0, 1.0))
+		destination_rectangle.position -= body_center
+	draw_texture_rect_region(active_texture, destination_rectangle, source_rectangle, PLAYER_TINT)
+	_draw_equipped_armor_overlay(overlay_kind, active_frame_index, destination_rectangle)
+	if flip_horizontally:
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 # Equipped armor's visual (e.g. a hat), drawn over the just-drawn body
 # sprite -- mirrors Player.gd's _draw_equipped_armor_overlay exactly (see
