@@ -1,5 +1,5 @@
 extends RefCounted
-# Player character logic: movement, bulb/mark input triggers, health, attack input, respawn, drawing.
+# Player character logic: movement, bulb input triggers, health, attack input, respawn, drawing.
 # Split out of Game.gd -- operates on shared board/combat state via the `game` back-reference.
 
 var game: Node2D
@@ -177,8 +177,6 @@ func _sync_player_position(player_index: int, row: int, col: int) -> void:
 	player_state["animation_progress"] = 0.0
 	# no game.queue_redraw() here -- game._process() drives redraws while this hop animates
 
-# --- Bulb / mark toggling: any player, any peer, routed to the host --------
-
 func _damage_player(player_state: Dictionary, player_index: int, amount: int, is_ranged: bool = false) -> void:
 	if player_state["is_defeated"]:
 		return
@@ -285,7 +283,7 @@ func _advance_player_animations(delta: float) -> bool:
 			player_state["visual_position"] = from_position.lerp(to_position, eased_progress)
 			any_animating = true
 
-			var run_frame_count: int = PLAYER_RUN_SHEET_FRAME_COUNT if game.player_run_sheet_texture != null else PLAYER_SHEET_FRAME_COUNT
+			var run_frame_count: int = PLAYER_RUN_SHEET_FRAME_COUNT
 			var animation_timer: float = player_state["animation_timer"] + delta
 			if animation_timer >= PLAYER_ANIMATION_FRAME_DURATION:
 				animation_timer = 0.0
@@ -380,90 +378,67 @@ func _draw_players() -> void:
 
 		# Sheet priority: an in-progress one-shot attack/interact pose wins,
 		# then a continuous held-guard pose while blocking, then run (while
-		# a hop is in progress) or idle (while standing still). Each tier
-		# falls through to the next if its texture wasn't supplied, right
-		# down to the plain-shape fallback below.
-		var active_texture: Texture2D = null
-		var active_frame_index: int = 0
+		# a hop is in progress) or idle (while standing still).
+		var active_texture: Texture2D
+		var active_frame_index: int
 		# Which sheet kind is showing, for picking the matching equipped-armor
-		# overlay art and offset (see _draw_equipped_armor_overlay); "" = none.
-		var overlay_kind: String = ""
+		# overlay art and offset (see _draw_equipped_armor_overlay).
+		var overlay_kind: String
 		var action_anim: String = player_state["action_anim"]
 		var is_moving: bool = player_state["animation_progress"] < 1.0
-		if action_anim == "attack" and game.player_attack_sheet_texture != null:
+		if action_anim == "attack":
 			active_texture = game.player_attack_sheet_texture
 			active_frame_index = player_state["action_frame_index"]
 			overlay_kind = "attack"
-		elif action_anim == "interact" and game.player_interact_sheet_texture != null:
+		elif action_anim == "interact":
 			active_texture = game.player_interact_sheet_texture
 			active_frame_index = player_state["action_frame_index"]
 			overlay_kind = "interact"
-		elif is_blocking and game.player_interact_sheet_texture != null:
+		elif is_blocking:
 			active_texture = game.player_interact_sheet_texture
 			active_frame_index = player_state["block_anim_frame_index"]
 			overlay_kind = "interact"
-		elif is_moving and game.player_run_sheet_texture != null:
+		elif is_moving:
 			active_texture = game.player_run_sheet_texture
 			active_frame_index = player_state["animation_frame_index"]
 			overlay_kind = "run"
-		elif not is_moving and game.player_idle_sheet_texture != null:
+		else:
 			active_texture = game.player_idle_sheet_texture
 			active_frame_index = player_state["idle_frame_index"]
 			overlay_kind = "idle"
-		elif game.player_sheet_texture != null:
-			active_texture = game.player_sheet_texture
-			active_frame_index = player_state["animation_frame_index"] if is_moving else 0
-			overlay_kind = "walk"
 
-		if active_texture != null:
-			var facing_direction: String = player_state["facing_direction"]
-			var source_direction: String = "right" if facing_direction == "left" else facing_direction
-			var direction_row: int = PLAYER_SHEET_DIRECTION_ROWS.get(source_direction, 0)
-			var frame_index: int = active_frame_index
-			var source_rectangle: Rect2 = Rect2(
-				frame_index * PLAYER_SHEET_FRAME_WIDTH,
-				direction_row * PLAYER_SHEET_FRAME_HEIGHT,
-				PLAYER_SHEET_FRAME_WIDTH,
-				PLAYER_SHEET_FRAME_HEIGHT
-			)
-			var sprite_size: float = game.CELL_SIZE * 0.6 * spawn_scale
-			var destination_rectangle: Rect2 = Rect2(
-				body_center.x - sprite_size / 2.0, body_center.y - sprite_size / 2.0,
-				sprite_size, sprite_size
-			)
-			if is_own_avatar:
-				game.draw_circle(body_center, sprite_size * 0.5 + 3.0, Color(1, 1, 1, spawn_eased * OWN_AVATAR_RING_ALPHA))
-			var flip_horizontally: bool = facing_direction == "left"
-			if flip_horizontally:
-				# Mirror the whole draw about the body's center with a canvas
-				# transform, so the source rect is always the plain, in-bounds
-				# frame. (The old approach -- a negative-width source rect
-				# shifted by one frame -- can end up sampling the *next*
-				# frame's region, which for a row's last frame is off the
-				# edge of the sheet and draws nothing.) The rects drawn below
-				# are relative to body_center while the mirror is active.
-				game.draw_set_transform(body_center, 0.0, Vector2(-1.0, 1.0))
-				destination_rectangle.position -= body_center
-			game.draw_texture_rect_region(active_texture, destination_rectangle, source_rectangle, Color(player_color, player_color.a * spawn_eased))
-			if overlay_kind != "":
-				_draw_equipped_armor_overlay(player_index, overlay_kind, frame_index, destination_rectangle, spawn_eased)
-			if flip_horizontally:
-				game.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-		elif game.player_static_texture != null:
-			var sprite_size: float = game.CELL_SIZE * 0.5 * spawn_scale
-			if is_own_avatar:
-				game.draw_circle(body_center, sprite_size * 0.5 + 3.0, Color(1, 1, 1, spawn_eased * OWN_AVATAR_RING_ALPHA))
-			var destination_rectangle: Rect2 = Rect2(
-				body_center.x - sprite_size / 2.0, body_center.y - sprite_size / 2.0,
-				sprite_size, sprite_size
-			)
-			game.draw_texture_rect(game.player_static_texture, destination_rectangle, false, Color(player_color, player_color.a * spawn_eased))
-		else:
-			var avatar_radius: float = game.CELL_SIZE * 0.14 * spawn_scale
-			if is_own_avatar:
-				game.draw_circle(body_center, avatar_radius + 3.0, Color(1, 1, 1, spawn_eased * OWN_AVATAR_RING_ALPHA))
-			game.draw_circle(body_center, avatar_radius, Color(player_color, player_color.a * spawn_eased))
-			game.draw_arc(body_center, avatar_radius, 0.0, TAU, 16, Color(player_color.darkened(0.5), spawn_eased), 2.0)
+		var facing_direction: String = player_state["facing_direction"]
+		var source_direction: String = "right" if facing_direction == "left" else facing_direction
+		var direction_row: int = PLAYER_SHEET_DIRECTION_ROWS.get(source_direction, 0)
+		var frame_index: int = active_frame_index
+		var source_rectangle: Rect2 = Rect2(
+			frame_index * PLAYER_SHEET_FRAME_WIDTH,
+			direction_row * PLAYER_SHEET_FRAME_HEIGHT,
+			PLAYER_SHEET_FRAME_WIDTH,
+			PLAYER_SHEET_FRAME_HEIGHT
+		)
+		var sprite_size: float = game.CELL_SIZE * 0.6 * spawn_scale
+		var destination_rectangle: Rect2 = Rect2(
+			body_center.x - sprite_size / 2.0, body_center.y - sprite_size / 2.0,
+			sprite_size, sprite_size
+		)
+		if is_own_avatar:
+			game.draw_circle(body_center, sprite_size * 0.5 + 3.0, Color(1, 1, 1, spawn_eased * OWN_AVATAR_RING_ALPHA))
+		var flip_horizontally: bool = facing_direction == "left"
+		if flip_horizontally:
+			# Mirror the whole draw about the body's center with a canvas
+			# transform, so the source rect is always the plain, in-bounds
+			# frame. (The old approach -- a negative-width source rect
+			# shifted by one frame -- can end up sampling the *next*
+			# frame's region, which for a row's last frame is off the
+			# edge of the sheet and draws nothing.) The rects drawn below
+			# are relative to body_center while the mirror is active.
+			game.draw_set_transform(body_center, 0.0, Vector2(-1.0, 1.0))
+			destination_rectangle.position -= body_center
+		game.draw_texture_rect_region(active_texture, destination_rectangle, source_rectangle, Color(player_color, player_color.a * spawn_eased))
+		_draw_equipped_armor_overlay(player_index, overlay_kind, frame_index, destination_rectangle, spawn_eased)
+		if flip_horizontally:
+			game.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 		var attack_flash: float = player_state["attack_flash_timer"] / game.combat_mgr.ATTACK_FLASH_DURATION
 		if attack_flash > 0.0:

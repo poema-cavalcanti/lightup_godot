@@ -1,9 +1,9 @@
 extends RefCounted
 # Light Up puzzle-solving logic: parsing the level string into a grid,
-# bulb/mark placement (incl. their RPC request/sync pairs), computing lit
+# bulb placement (incl. its RPC request/sync pair), computing lit
 # cells and bulb conflicts, clue-satisfaction bonuses, and the solved
 # check. Split out of Game.gd -- operates on shared board state (rows,
-# cols, grid, bulbs, marks, lit, ...) via the `game` back-reference.
+# cols, grid, bulbs, lit, ...) via the `game` back-reference.
 
 var game: Node2D
 
@@ -16,11 +16,9 @@ func parse_puzzle() -> void:
 	game.grid.clear()
 	game.floor_seed = hash(game.current_puzzle_rows)
 	game.bulbs.clear()
-	game.marks.clear()
 	for row in range(game.rows):
 		var grid_row: Array = []
 		var bulb_row: Array = []
-		var mark_row: Array = []
 		var row_string: String = game.current_puzzle_rows[row]
 		for col in range(game.cols):
 			var cell_character: String = row_string[col]
@@ -31,10 +29,8 @@ func parse_puzzle() -> void:
 			else:
 				grid_row.append({"type": game.CellType.BLACK, "number": int(cell_character)})
 			bulb_row.append(false)
-			mark_row.append(false)
 		game.grid.append(grid_row)
 		game.bulbs.append(bulb_row)
-		game.marks.append(mark_row)
 	_reset_clue_bonus_tracking()
 
 func _reset_clue_bonus_tracking() -> void:
@@ -218,47 +214,15 @@ func _request_toggle_bulb(player_index: int) -> void:
 	if is_black(player_row, player_col):
 		return
 	var new_bulb_value: bool = not game.bulbs[player_row][player_col]
-	var new_mark_value: bool = false if new_bulb_value else game.marks[player_row][player_col]
 	if NetworkManager.is_multiplayer:
-		game.rpc("_sync_bulb", player_index, player_row, player_col, new_bulb_value, new_mark_value)
+		game.rpc("_sync_bulb", player_index, player_row, player_col, new_bulb_value)
 	else:
-		_sync_bulb(player_index, player_row, player_col, new_bulb_value, new_mark_value)
+		_sync_bulb(player_index, player_row, player_col, new_bulb_value)
 
 @rpc("authority", "call_local", "reliable")
-func _sync_bulb(player_index: int, row: int, col: int, bulb_value: bool, mark_value: bool) -> void:
+func _sync_bulb(player_index: int, row: int, col: int, bulb_value: bool) -> void:
 	game.bulbs[row][col] = bulb_value
-	game.marks[row][col] = mark_value
 	game.player_mgr._trigger_action_animation(player_index, "interact")
-	recompute_state()
-
-func _handle_mark_input() -> void:
-	if NetworkManager.is_multiplayer and not game.multiplayer.is_server():
-		game.rpc_id(1, "_request_toggle_mark", game.my_player_index)
-	else:
-		_request_toggle_mark(game.my_player_index)
-
-@rpc("any_peer", "call_remote", "reliable")
-func _request_toggle_mark(player_index: int) -> void:
-	if NetworkManager.is_multiplayer and not game.multiplayer.is_server():
-		return
-	if not NetworkManager.validate_request(player_index, game.players.size(), "mark", 0.08):
-		return
-	var player_state: Dictionary = game.players[player_index]
-	if player_state["is_defeated"]:
-		return
-	var player_row: int = player_state["row"]
-	var player_col: int = player_state["col"]
-	if is_black(player_row, player_col) or game.bulbs[player_row][player_col]:
-		return
-	var new_mark_value: bool = not game.marks[player_row][player_col]
-	if NetworkManager.is_multiplayer:
-		game.rpc("_sync_mark", player_row, player_col, new_mark_value)
-	else:
-		_sync_mark(player_row, player_col, new_mark_value)
-
-@rpc("authority", "call_local", "reliable")
-func _sync_mark(row: int, col: int, mark_value: bool) -> void:
-	game.marks[row][col] = mark_value
 	recompute_state()
 
 # --- Combat: attacking, taking damage, dying, respawning -------------------

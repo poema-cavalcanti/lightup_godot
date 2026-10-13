@@ -29,9 +29,8 @@ extends CanvasLayer
 #                          scrolling item grid, the hint) over a dimmed backdrop
 #   InventorySlot.tscn  -- one equipment box (icon, name fallback, click area)
 #   InventoryTile.tscn  -- one item in the grid (icon, badges, gold border)
-# This script only fills them in: it loads the parchment art (optional, so a
-# missing image can't break the scene -- plain colored boxes are shown
-# instead), adds a tile per owned item, and keeps the slots/tiles in step with
+# This script only fills them in: it loads the parchment art, adds a tile per
+# owned item, and keeps the slots/tiles in step with
 # what's equipped. The art, the slot boxes and the grid area are positioned
 # for assets/inventory_background.png (640x448): its left wing has two
 # silhouette boxes -- the top one is the "armor" slot (hats), the bottom one
@@ -58,7 +57,6 @@ const SLOT_NAMES: Array[String] = ["armor", "weapon"]
 const SLOT_LABELS: Dictionary = {"armor": "Armor", "weapon": "Weapon"}
 
 @onready var art_rect: TextureRect = %Art
-@onready var fallback_panel: Control = %Fallback
 @onready var close_button: Button = %CloseButton
 @onready var item_scroll: ScrollContainer = %ItemScroll
 @onready var items_grid: GridContainer = %ItemGrid
@@ -74,15 +72,7 @@ var tiles: Dictionary = {}  # item_id -> its InventoryTile (a Button)
 var can_open: Callable = Callable()
 
 func _ready() -> void:
-	var art: Texture2D = AssetLoader.load_optional_texture("res://assets/" + BACKGROUND_ART)
-	art_rect.texture = art
-	art_rect.visible = art != null
-	fallback_panel.visible = art == null
-	if art == null:
-		# No drawn X or slot boxes to sit over, so make them visible.
-		close_button.text = "X"
-		for slot_name: String in SLOT_NAMES:
-			_slot_part(slot_name, "Placeholder").visible = true
+	art_rect.texture = AssetLoader.load_texture("res://assets/" + BACKGROUND_ART)
 
 	close_button.pressed.connect(close)
 	for slot_name: String in SLOT_NAMES:

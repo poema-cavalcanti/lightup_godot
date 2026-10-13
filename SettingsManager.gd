@@ -21,7 +21,7 @@ const SIZE_PRESETS: Array[Vector2i] = [
 const DEFAULT_WINDOW_SIZE: Vector2i = Vector2i(1280, 720)
 
 # Rebindable actions -- movement, placing a light, attacking, and blocking,
-# per the player's own request. Mark (M), fullscreen (F11), and pause
+# per the player's own request. Fullscreen (F11) and pause
 # (Escape) are intentionally not included here and stay fixed.
 const KEY_BINDING_ACTIONS: Array[String] = [
 	"move_up", "move_down", "move_left", "move_right", "place_light", "attack", "block",

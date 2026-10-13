@@ -12,8 +12,8 @@ extends Node2D
 #   - Singleplayer: everything below runs locally, no networking involved.
 #   - Multiplayer: NetworkManager hands us a puzzle + starting positions
 #     after the Lobby's "Start Game". The HOST is authoritative for all
-#     shared state (bulbs, marks, player positions, health, enemies). Every
-#     player's movement/place-light/mark/attack input is sent to the host (directly, if you
+#     shared state (bulbs, player positions, health, enemies). Every
+#     player's movement/place-light/attack input is sent to the host (directly, if you
 #     ARE the host; over RPC otherwise), the host applies and validates it,
 #     then broadcasts the result to everyone (itself included) so all
 #     boards stay identical.
@@ -28,36 +28,24 @@ extends Node2D
 # attack resolution, respawn timing) is host-only, exactly like the puzzle
 # rules -- clients only ever render synced state.
 #
-# Pixel art: everything renders with plain flat-color shapes by default.
-# Dropping files into res://assets/ (see assets/README.md) switches
-# individual pieces over to art automatically:
+# Pixel art: all art lives in res://assets/ and is loaded by AssetLoader (see
+# assets/README.md); the files below are REQUIRED -- there are no flat-colour
+# fallbacks any more:
 #   - wall.png / wall_0.png..wall_4.png : black cell tiles, generic and
-#     per-clue-number, checked independently with a fallback chain. Each
-#     also has a wall_lit.png / wall_N_lit.png animation strip (horizontal
-#     strip of square frames) shown while lit.
-#   - floor_0.png, floor_1.png, ...     : white cell tile variants, picked
-#     per-cell by a hash of (row, col, puzzle) so the scatter looks random but is
-#     stable (no flicker) and identical on every peer.
-#   - bulb.png, mark.png                : tinted the same way the flat
-#     shapes already were (lit/conflict tint on the floor and bulb).
-#     bulb.png may be an animated strip of square frames (see bulb_frame_count).
-#   - player_sheet.png                  : a 4-row (down/left/right/up),
-#     multi-frame walk-cycle sheet, tinted per player. Falls back to a
-#     single static player.png (also tinted), then to a plain circle.
-#   - player_idle_sheet.png, player_run_sheet.png : same per-direction row
-#     layout as player_sheet.png, swapped in for whichever state actually
-#     applies -- idle loops continuously while standing still, run plays
-#     while a hop is in progress (i.e. while a movement key is held down).
-#     Either is optional and falls back to player_sheet.png (frame 0 for
-#     idle, its own walk-cycle frames for run) if missing.
-#   - player_attack_sheet.png, player_interact_sheet.png : same per-direction
-#     row layout as player_sheet.png (down/right/up, left mirrored from
-#     right), swapped in for a brief one-shot animation when the player
-#     attacks or places/removes a bulb; player_interact_sheet.png also
-#     loops continuously while the player is blocking. Either is optional
-#     and simply falls back to the regular walk sheet's pose if missing.
-#   (Enemies currently always render as plain shapes -- no pixel art hook
-#   for them yet.)
+#     per-clue-number, each with a wall_lit.png / wall_N_lit.png animation
+#     strip (horizontal strip of square frames) shown while lit.
+#   - floor_0.png, floor_1.png, ...     : white cell tile variants (each with a
+#     floor_N_lit.png), picked per-cell by a hash of (row, col, puzzle) so the
+#     scatter looks random but is stable (no flicker) and identical on every peer.
+#   - bulb.png                          : tinted red on a conflict. May be an
+#     animated strip of square frames (see bulb_frame_count).
+#   - player_idle_sheet.png, player_run_sheet.png, player_attack_sheet.png,
+#     player_interact_sheet.png         : per-direction row sheets (down/right/
+#     up, left mirrored from right), tinted per player. Idle loops while
+#     standing still, run plays while a hop is in progress, attack/interact
+#     are brief one-shots (interact also loops while blocking).
+#   - enemy_*_sheet.png, boss_tier_N_*_sheet.png : animated enemy/boss sheets.
+#   - projectile.png, border_*.png      : required.
 #
 # Player and enemy movement is logically instant (row/col update
 # immediately, so rules/combat never wait on animation) but visually eased
@@ -103,7 +91,6 @@ const COMBAT_MAX_HEALTH: int = 100
 const CONFLICT_SPAWN_INTERVAL: float = 5.0
 const RESPAWN_DURATION: float = 10.0
 const MOVE_ANIMATION_DURATION: float = 0.15
-const BOSS_COLOR: Color = Color(0.35, 0.05, 0.45)
 const LEVEL_TIME_LIMIT: float = 300.0  # 5 minutes
 const LEVEL_TIMER_BONUS_SECONDS: float = 30.0  # extends the boss deadline when a clue is freshly satisfied
 
@@ -113,7 +100,6 @@ var rows: int
 var cols: int
 var grid: Array = []              # grid[row][col] = {type, number}
 var bulbs: Array = []             # bulbs[row][col] = bool
-var marks: Array = []             # marks[row][col] = bool  (player notes, M key)
 var lit: Array = []               # lit[row][col] = bool (computed each frame)
 var wall_lit: Array = []          # wall_lit[row][col] = bool: black cell is in line of sight of at least one bulb
 var conflicting_bulbs: Dictionary = {}  # {[row,col]: true} bulbs that illuminate another bulb
@@ -177,8 +163,7 @@ var earnings_panel: Control
 # below only ever reads its is_open() to hold off on movement/attack/block
 # input while it's up.
 var inventory_panel: CanvasLayer
-var font: Font
-var font_size: int = 22
+var font: Font  # used by HUDManager for the minimap numbers, popups, hints and win banner
 
 var offset_x: int = 0
 var offset_y: int = 0
@@ -220,7 +205,7 @@ var confetti_pieces: Array[Dictionary] = []
 var wall_textures: Dictionary = {}          # clue number (-1 for blank) -> Texture2D
 var floor_seed: int = 0  # set per puzzle in parse_puzzle; scatters floor variants
 var floor_textures: Array[Texture2D] = []   # ordered list of floor tile variants
-var floor_lit_textures: Array[Texture2D] = []  # same order/length as floor_textures; entries may be null
+var floor_lit_textures: Array[Texture2D] = []  # same order/length as floor_textures
 var bulb_texture: Texture2D = null
 # bulb.png is a horizontal strip of equal-width frames (frame count = width / height,
 # worked out in AssetLoader); a plain single-image bulb.png just comes out as 1 frame.
@@ -229,34 +214,18 @@ var bulb_anim_time: float = 0.0  # advanced in _process(), so it freezes with th
 const BULB_FRAME_DURATION: float = 0.12  # seconds per frame (6 frames = a ~0.7s loop)
 const WALL_FRAME_DURATION: float = 0.12  # seconds per frame of a lit wall's animation strip (shares bulb_anim_time)
 const BULB_SPRITE_SCALE: float = 1.0  # 1.0 = each frame drawn at CELL_SIZE (native pixel scale for 64x64 frames)
-var mark_texture: Texture2D = null
-var player_sheet_texture: Texture2D = null
-var player_static_texture: Texture2D = null
 var player_attack_sheet_texture: Texture2D = null
 var player_interact_sheet_texture: Texture2D = null
 var player_idle_sheet_texture: Texture2D = null
 var player_run_sheet_texture: Texture2D = null
-var enemy_texture: Texture2D = null
-var boss_texture: Texture2D = null
-var boss_tier_textures: Dictionary = {}  # tier (1-4) -> Texture2D, see _get_boss_texture()
 var projectile_texture: Texture2D = null
-# Animated enemy/boss sheets -- each an optional single-row strip of equal-
-# width square frames (frame count inferred from width/height, no fixed
-# pixel size like the player sheets). Any of these being null just falls
-# back to the plain static enemy_texture/boss_texture/boss_tier_textures
-# above for that moment. See assets/README.md for the full convention.
+# Animated enemy/boss sheets -- each a multi-row strip of equal-size square
+# frames (4 rows: down/up/left/right; frame count inferred from width/height).
+# See assets/README.md for the full convention.
 var enemy_sheets: Dictionary = {}  # "enemy_idle", "boss_tier_1_attack", ... -> Texture2D (see Enemy.gd ANIMS)
-var background_texture: Texture2D = null
 # "top", "bottom", "left", "right", "top_left", "top_right", "bottom_left",
 # "bottom_right" -> Texture2D (loaded from border_*.png / border_corner_*.png).
-# Empty when no border art exists, in which case no border is drawn and no
-# extra room is reserved for one.
 var border_textures: Dictionary = {}
-var icon_timer_texture: Texture2D = null
-var icon_health_texture: Texture2D = null
-var icon_weapon_texture: Texture2D = null
-var icon_shield_texture: Texture2D = null
-var icon_gold_texture: Texture2D = null
 
 const PlayerLogic := preload("res://Player.gd")
 const EnemyLogic := preload("res://Enemy.gd")
@@ -347,8 +316,6 @@ func _input(event: InputEvent) -> void:
 		var keycode: int = event.keycode
 		if keycode == SettingsManager.get_key_binding("place_light"):
 			puzzle_mgr._handle_bulb_input()
-		elif keycode == KEY_M:
-			puzzle_mgr._handle_mark_input()
 		elif keycode == SettingsManager.get_key_binding("attack"):
 			player_mgr._handle_attack_input()
 		elif keycode == KEY_F11:
@@ -378,16 +345,8 @@ func _request_toggle_bulb(player_index: int) -> void:
 	puzzle_mgr._request_toggle_bulb(player_index)
 
 @rpc("authority", "call_local", "reliable")
-func _sync_bulb(player_index: int, row: int, col: int, bulb_value: bool, mark_value: bool) -> void:
-	puzzle_mgr._sync_bulb(player_index, row, col, bulb_value, mark_value)
-
-@rpc("any_peer", "call_remote", "reliable")
-func _request_toggle_mark(player_index: int) -> void:
-	puzzle_mgr._request_toggle_mark(player_index)
-
-@rpc("authority", "call_local", "reliable")
-func _sync_mark(row: int, col: int, mark_value: bool) -> void:
-	puzzle_mgr._sync_mark(row, col, mark_value)
+func _sync_bulb(player_index: int, row: int, col: int, bulb_value: bool) -> void:
+	puzzle_mgr._sync_bulb(player_index, row, col, bulb_value)
 
 @rpc("any_peer", "call_remote", "reliable")
 func _request_attack(player_index: int) -> void:
@@ -413,17 +372,15 @@ func _on_reset_pressed() -> void:
 	if NetworkManager.is_multiplayer and not multiplayer.is_server():
 		return
 	var cleared_bulbs: Array = puzzle_mgr._empty_bool_grid()
-	var cleared_marks: Array = puzzle_mgr._empty_bool_grid()
 	var new_positions: Array = BoardUtil.corner_positions(current_puzzle_rows, players.size())
 	if NetworkManager.is_multiplayer:
-		rpc("_sync_full_reset", cleared_bulbs, cleared_marks, new_positions)
+		rpc("_sync_full_reset", cleared_bulbs, new_positions)
 	else:
-		_sync_full_reset(cleared_bulbs, cleared_marks, new_positions)
+		_sync_full_reset(cleared_bulbs, new_positions)
 
 @rpc("authority", "call_local", "reliable")
-func _sync_full_reset(new_bulbs: Array, new_marks: Array, new_positions: Array) -> void:
+func _sync_full_reset(new_bulbs: Array, new_positions: Array) -> void:
 	bulbs = new_bulbs
-	marks = new_marks
 	error_flash_cells.clear()
 	error_flash_timer = 0.0
 	for player_index in range(players.size()):
@@ -584,12 +541,11 @@ func _client_ready(_claimed_peer_id: int) -> void:
 		return
 	if not NetworkManager.rate_limit_ok(peer_id, "client_ready", 1.0):
 		return
-	rpc_id(peer_id, "_full_state_sync", bulbs, marks, _players_positions_array(), _players_combat_array(), enemy_mgr._build_enemy_snapshot(), level_timer, boss_spawn_evaluated, current_level_time_limit)
+	rpc_id(peer_id, "_full_state_sync", bulbs, _players_positions_array(), _players_combat_array(), enemy_mgr._build_enemy_snapshot(), level_timer, boss_spawn_evaluated, current_level_time_limit)
 
 @rpc("authority", "call_remote", "reliable")
-func _full_state_sync(new_bulbs: Array, new_marks: Array, new_positions: Array, new_combat: Array, enemy_snapshot: Array, new_level_timer: float, new_boss_spawn_evaluated: bool, new_level_time_limit: float) -> void:
+func _full_state_sync(new_bulbs: Array, new_positions: Array, new_combat: Array, enemy_snapshot: Array, new_level_timer: float, new_boss_spawn_evaluated: bool, new_level_time_limit: float) -> void:
 	bulbs = new_bulbs
-	marks = new_marks
 	for player_index in range(players.size()):
 		var new_position: Array = new_positions[player_index]
 		var combat_entry: Dictionary = new_combat[player_index]
@@ -688,23 +644,20 @@ func _process(delta: float) -> void:
 	# whenever some other event (movement, combat) happened to trigger a redraw.
 	queue_redraw()
 
-# How many cells thick the border ring is on each side: 1 when there's
-# border art, 0 otherwise. The camera treats the ring as extra rows/cols of
-# the world (see HUDManager._compute_view_window), so no screen space is
-# ever reserved for it -- it just takes its place as the outermost row/col
-# when the camera scrolls to that edge.
+# How many cells thick the border ring is on each side. The camera treats the
+# ring as extra rows/cols of the world (see HUDManager._compute_view_window), so
+# no screen space is ever reserved for it -- it just takes its place as the
+# outermost row/col when the camera scrolls to that edge.
 func _border_cells() -> int:
-	return 0 if border_textures.is_empty() else 1
+	return 1
 
 # Draws the border ring around the puzzle's outer edge: the tiles at
 # row -1 / row `rows` and col -1 / col `cols`, i.e. just outside the board.
 # Positioned with the same _tile_to_pixel as the cells, so it scrolls with
 # the board. Only tiles inside the camera's visible range (border_first_row
 # .. border_last_col, computed by HUDManager) are drawn. Edges are drawn
-# first, corners on top; any missing piece is just skipped.
+# first, corners on top.
 func _draw_border() -> void:
-	if border_textures.is_empty():
-		return
 	var first_row: int = border_first_row
 	var last_row: int = border_last_row
 	var first_col: int = border_first_col
@@ -727,9 +680,7 @@ func _draw_border() -> void:
 			_draw_border_tile(corner[0], corner[1], corner[2])
 
 func _draw_border_tile(piece_name: String, row: int, col: int) -> void:
-	var texture: Texture2D = border_textures.get(piece_name)
-	if texture == null:
-		return
+	var texture: Texture2D = border_textures[piece_name]
 	var destination: Rect2 = Rect2(_tile_to_pixel(row, col), Vector2(CELL_SIZE, CELL_SIZE))
 	if destination.intersects(get_viewport_rect()):
 		draw_texture_rect(texture, destination, false)
@@ -744,101 +695,42 @@ func _draw() -> void:
 			var cell_position: Vector2 = _tile_to_pixel(row, col)
 			var cell_rectangle: Rect2 = Rect2(cell_position, Vector2(CELL_SIZE, CELL_SIZE))
 			var cell_data: Dictionary = grid[row][col]
-			var cell_has_art: bool = false
 
 			if cell_data["type"] == CellType.BLACK:
 				var wall_number: int = cell_data["number"]
 				# Clues 1-4 light up while exactly satisfied; the 0 clue and the
 				# blank wall light up while any bulb has line of sight to them.
 				var is_wall_lit: bool = (puzzle_mgr._bulb_neighbor_count(row, col) == wall_number) if wall_number >= 1 else wall_lit[row][col]
-				var wall_result: Dictionary = asset_mgr._get_wall_texture(wall_number, is_wall_lit)
-				var wall_texture: Texture2D = wall_result["texture"]
-				if wall_texture != null:
-					cell_has_art = true
-					if wall_result["animated"]:
-						var wall_frames: int = AssetLoader.wall_frame_count(wall_texture)
-						# Per-cell frame offset (same trick as the bulbs) so a field of
-						# lit walls doesn't pulse in lockstep.
-						var wall_frame: int = (int(bulb_anim_time / WALL_FRAME_DURATION) + row * 5 + col * 3) % wall_frames
-						var wall_frame_width: float = float(wall_texture.get_width()) / float(wall_frames)
-						draw_texture_rect_region(wall_texture, cell_rectangle, Rect2(wall_frame * wall_frame_width, 0.0, wall_frame_width, float(wall_texture.get_height())))
-					else:
-						draw_texture_rect(wall_texture, cell_rectangle, false)
-				else:
-					draw_rect(cell_rectangle, Color(0.13, 0.13, 0.16))
-				# Skip the text when this cell's own wall art was used --
-				# it's assumed to already encode the number visually (see
-				# assets/README.md). Falls back to drawing it whenever the
-				# generic blank wall.png (or the plain rectangle) had to
-				# stand in instead, same as before this existed.
-				if cell_data["number"] >= 0 and not wall_result["has_own_art"]:
-					var text_position: Vector2 = Vector2(cell_position.x, cell_position.y + CELL_SIZE * 0.5 + font_size * 0.35)
-					draw_string(font, text_position, str(cell_data["number"]),
-						HORIZONTAL_ALIGNMENT_CENTER, CELL_SIZE, font_size, Color.WHITE)
+				var wall_texture: Texture2D = asset_mgr._get_wall_texture(wall_number, is_wall_lit)
+				# A strip of square frames (the plain wall is just a 1-frame strip).
+				# Per-cell frame offset (same trick as the bulbs) so a field of
+				# lit walls doesn't pulse in lockstep.
+				var wall_frames: int = AssetLoader.wall_frame_count(wall_texture)
+				var wall_frame: int = (int(bulb_anim_time / WALL_FRAME_DURATION) + row * 5 + col * 3) % wall_frames
+				var wall_frame_width: float = float(wall_texture.get_width()) / float(wall_frames)
+				draw_texture_rect_region(wall_texture, cell_rectangle, Rect2(wall_frame * wall_frame_width, 0.0, wall_frame_width, float(wall_texture.get_height())))
 			else:
+				var floor_variant_index: int = hash([row, col, floor_seed]) % floor_textures.size()
+				var floor_texture: Texture2D = floor_lit_textures[floor_variant_index] if lit[row][col] else floor_textures[floor_variant_index]
 				var tile_tint: Color = Color(1, 1, 1)
-				var use_lit_tint: bool = false  # only tint yellow as a substitute when there's no dedicated lit texture to switch to
-				var floor_texture: Texture2D = null
-
-				if not floor_textures.is_empty():
-					var floor_variant_index: int = hash([row, col, floor_seed]) % floor_textures.size()
-					floor_texture = floor_textures[floor_variant_index]
-					if lit[row][col]:
-						var lit_texture: Texture2D = floor_lit_textures[floor_variant_index] if floor_variant_index < floor_lit_textures.size() else null
-						if lit_texture != null:
-							floor_texture = lit_texture
-						else:
-							use_lit_tint = true
-				elif lit[row][col]:
-					use_lit_tint = true
-
-				if use_lit_tint:
-					tile_tint = Color(1, 0.93, 0.55)
 				if conflicting_bulbs.has([row, col]):
 					tile_tint = tile_tint.lerp(Color(1, 0.35, 0.35), 0.6)
-
-				if floor_texture != null:
-					cell_has_art = true
-					draw_texture_rect(floor_texture, cell_rectangle, false, tile_tint)
-				else:
-					draw_rect(cell_rectangle, tile_tint)
+				draw_texture_rect(floor_texture, cell_rectangle, false, tile_tint)
 
 				if bulbs[row][col]:
 					var cell_center: Vector2 = _tile_center_to_pixel(row, col)
-					if bulb_texture != null:
-						var bulb_tint: Color = Color(1, 1, 1)
-						if conflicting_bulbs.has([row, col]):
-							bulb_tint = Color(1.4, 0.4, 0.4)
-						var bulb_size: float = CELL_SIZE * BULB_SPRITE_SCALE
-						var bulb_rectangle: Rect2 = Rect2(cell_center.x - bulb_size / 2.0, cell_center.y - bulb_size / 2.0, bulb_size, bulb_size)
-						# Offset each cell's start frame by its position so a field of
-						# bulbs flickers out of step instead of in lockstep (stable per
-						# cell, so no popping when the board redraws).
-						var bulb_frame: int = (int(bulb_anim_time / BULB_FRAME_DURATION) + row * 5 + col * 3) % bulb_frame_count
-						var bulb_frame_width: float = float(bulb_texture.get_width()) / float(bulb_frame_count)
-						var bulb_source_rectangle: Rect2 = Rect2(bulb_frame * bulb_frame_width, 0.0, bulb_frame_width, float(bulb_texture.get_height()))
-						draw_texture_rect_region(bulb_texture, bulb_rectangle, bulb_source_rectangle, bulb_tint)
-					else:
-						var bulb_color: Color = Color(1, 0.82, 0.15)
-						if conflicting_bulbs.has([row, col]):
-							bulb_color = Color(0.9, 0.2, 0.2)
-						draw_circle(cell_center, CELL_SIZE * 0.28, bulb_color)
-						draw_arc(cell_center, CELL_SIZE * 0.28, 0, TAU, 24, Color(0.4, 0.3, 0.0), 2.0)
-				elif marks[row][col]:
-					var cell_center: Vector2 = _tile_center_to_pixel(row, col)
-					if mark_texture != null:
-						var mark_size: float = CELL_SIZE * 0.3
-						var mark_rectangle: Rect2 = Rect2(cell_center.x - mark_size / 2.0, cell_center.y - mark_size / 2.0, mark_size, mark_size)
-						draw_texture_rect(mark_texture, mark_rectangle, false)
-					else:
-						draw_circle(cell_center, CELL_SIZE * 0.08, Color(0.5, 0.5, 0.5))
-
-			if not cell_has_art:  # grid lines only for flat-colour fallback cells
-				draw_rect(cell_rectangle, Color(0, 0, 0), false, 2.0)
-
-	if floor_textures.is_empty():
-		var outer_border: Rect2 = Rect2(_tile_to_pixel(view_row_start, view_col_start), Vector2(view_cols * CELL_SIZE, view_rows * CELL_SIZE))
-		draw_rect(outer_border, Color(0, 0, 0), false, 4.0)
+					var bulb_tint: Color = Color(1, 1, 1)
+					if conflicting_bulbs.has([row, col]):
+						bulb_tint = Color(1.4, 0.4, 0.4)
+					var bulb_size: float = CELL_SIZE * BULB_SPRITE_SCALE
+					var bulb_rectangle: Rect2 = Rect2(cell_center.x - bulb_size / 2.0, cell_center.y - bulb_size / 2.0, bulb_size, bulb_size)
+					# Offset each cell's start frame by its position so a field of
+					# bulbs flickers out of step instead of in lockstep (stable per
+					# cell, so no popping when the board redraws).
+					var bulb_frame: int = (int(bulb_anim_time / BULB_FRAME_DURATION) + row * 5 + col * 3) % bulb_frame_count
+					var bulb_frame_width: float = float(bulb_texture.get_width()) / float(bulb_frame_count)
+					var bulb_source_rectangle: Rect2 = Rect2(bulb_frame * bulb_frame_width, 0.0, bulb_frame_width, float(bulb_texture.get_height()))
+					draw_texture_rect_region(bulb_texture, bulb_rectangle, bulb_source_rectangle, bulb_tint)
 
 	_draw_border()
 
