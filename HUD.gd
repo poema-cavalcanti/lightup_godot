@@ -17,23 +17,15 @@ extends Node
 #   FrontLayer (layer  1) -- hamburger, combat status text and the solve /
 #              defeat buttons: real controls that must sit above the board.
 #
-# Icon art comes from the textures AssetLoader already loads onto Game
-# (icon_timer.png, icon_health.png, icon_weapon.png, icon_shield.png,
-# icon_gold.png, background.png in res://assets/). Without a file, that icon
-# is just its colored circle.
+# The icon art (hourglass, heart, staff, hat, gold) is assigned directly on
+# the nodes in HUD.tscn, and the background is just the Background ColorRect.
 # ---------------------------------------------------------------------------
 
-@onready var background_art: TextureRect = %BackgroundArt
 @onready var timer_fill: ColorRect = %TimerFill
 @onready var timer_label: Label = %TimerLabel
-@onready var timer_texture: TextureRect = %TimerTexture
 @onready var health_fill: ColorRect = %HealthFill
 @onready var health_label: Label = %HealthLabel
-@onready var health_texture: TextureRect = %HealthTexture
-@onready var weapon_texture: TextureRect = %WeaponTexture
-@onready var shield_texture: TextureRect = %ShieldTexture
 @onready var gold_stat: Control = %GoldStat
-@onready var gold_texture: TextureRect = %GoldTexture
 @onready var gold_label: Label = %GoldLabel
 
 @onready var hamburger_button: Button = %HamburgerButton
@@ -52,13 +44,6 @@ var game: Node2D
 func setup(game_ref: Node2D, show_admin_buttons: bool) -> void:
 	game = game_ref
 
-	background_art.texture = game.background_texture
-	background_art.visible = game.background_texture != null
-	timer_texture.texture = game.icon_timer_texture
-	health_texture.texture = game.icon_health_texture
-	weapon_texture.texture = game.icon_weapon_texture
-	shield_texture.texture = game.icon_shield_texture
-	gold_texture.texture = game.icon_gold_texture
 	gold_stat.visible = CampaignManager.is_campaign_active  # nothing earns gold outside the campaign
 
 	hamburger_button.pressed.connect(game.pause_mgr._toggle_pause_menu)

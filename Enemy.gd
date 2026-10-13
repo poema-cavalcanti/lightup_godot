@@ -11,7 +11,6 @@ const ENEMY_MAX_HEALTH: int = 10
 const ENEMY_ATTACK_DAMAGE: int = 5
 const ENEMY_MOVE_INTERVAL: float = 0.7
 const ENEMY_ATTACK_INTERVAL: float = 1.0
-const ENEMY_COLOR: Color = Color(0.75, 0.1, 0.1)
 const MOVE_DIRECTIONS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
 const BOSS_MAX_HEALTH: int = 50
@@ -26,7 +25,7 @@ const SPAWN_ANIMATION_DURATION: float = 0.4  # scale/fade-in when an enemy first
 # (0 = infer from width/height, single-row sheets only), "rows", and either
 # "frame_time" (loops) or "duration" (one-shot: frames are stretched to fit it,
 # so the gameplay timers below always match the art whatever the frame count).
-# Missing sheets fall back to the static texture / shape. See assets/README.md.
+# See assets/README.md.
 const ATTACK_ANIMATION_DURATION: float = 0.25  # keep equal to CombatManager.ATTACK_FLASH_DURATION
 const RANGED_ANIMATION_DURATION: float = 0.3  # boss ranged wind-up/release pose, boss-only
 const HURT_ANIMATION_DURATION: float = 0.25
@@ -39,12 +38,12 @@ const ANIMS: Dictionary = {
 		"hurt": {"frames": 5, "rows": 4, "duration": HURT_ANIMATION_DURATION},
 		"death": {"frames": 10, "rows": 4, "duration": DEATH_ANIMATION_DURATION},
 	},
-	"boss": {  # tier sheets, boss_tier_<n>_<anim>_sheet.png
-		"idle": {"frames": 4, "rows": 4, "frame_time": 0.15},
-		"move": {"frames": 6, "rows": 4, "frame_time": 0.07},
-		"attack": {"frames": 12, "rows": 4, "duration": ATTACK_ANIMATION_DURATION},
-		"hurt": {"frames": 4, "rows": 4, "duration": HURT_ANIMATION_DURATION},
-		"death": {"frames": 11, "rows": 4, "duration": DEATH_ANIMATION_DURATION},
+	"boss": {  # tier sheets, boss_tier_<n>_<anim>_sheet.png; frame count (0) is read from each sheet since tiers differ
+		"idle": {"frames": 0, "rows": 4, "frame_time": 0.15},
+		"move": {"frames": 0, "rows": 4, "frame_time": 0.07},
+		"attack": {"frames": 0, "rows": 4, "duration": ATTACK_ANIMATION_DURATION},
+		"hurt": {"frames": 0, "rows": 4, "duration": HURT_ANIMATION_DURATION},
+		"death": {"frames": 0, "rows": 4, "duration": DEATH_ANIMATION_DURATION},
 	},
 }
 
@@ -68,7 +67,7 @@ func _create_enemy_state(enemy_id: int, spawn_row: int, spawn_col: int, health: 
 		"action_anim": "",  # "" (move/static) | "attack" | "ranged" (boss only) -- one-shot pose overlay
 		"action_progress": 1.0,
 		"is_dying": false,
-		"anim_name": "",  # current sheet key (see ANIMS), "" = static fallback
+		"anim_name": "idle",  # current sheet key (see ANIMS); idle until the first _advance_enemy_animations
 		"anim_time": 0.0,
 		"facing": 0,  # sheet row: 0 down, 1 up, 2 left, 3 right
 		"hurt_timer": 0.0,
@@ -78,7 +77,7 @@ func _create_enemy_state(enemy_id: int, spawn_row: int, spawn_col: int, health: 
 
 func _get_sheet(is_boss: bool, anim: String) -> Texture2D:
 	var key: String = ("boss_tier_%d_" % _get_boss_tier() if is_boss else "enemy_") + anim
-	return game.enemy_sheets.get(key) as Texture2D
+	return game.enemy_sheets[key]
 
 func _frame_count(sheet: Texture2D, def: Dictionary) -> int:
 	var frames: int = def["frames"]
@@ -94,26 +93,19 @@ func _anim_frame(sheet: Texture2D, def: Dictionary, anim_time: float) -> int:
 	var frame_time: float = def["frame_time"]
 	return int(anim_time / frame_time) % frames
 
-# Priority: death > hurt > attack/ranged > move > idle, skipping any whose
-# sheet is missing. Stateless, so finishing a hurt/attack just falls back.
+# Priority: death > hurt > attack/ranged > move > idle. Stateless, so finishing
+# a hurt/attack just falls back. The boss's "ranged" pose has no sheet of its
+# own and reuses the attack sheet.
 func _select_animation(enemy_state: Dictionary) -> String:
-	var is_boss: bool = enemy_state["is_boss"]
 	if enemy_state["is_dying"]:
-		return "death" if _get_sheet(is_boss, "death") != null else ""
-	var candidates: Array[String] = []
+		return "death"
 	if enemy_state["hurt_timer"] > 0.0:
-		candidates.append("hurt")
+		return "hurt"
 	if enemy_state["action_anim"] != "":
-		candidates.append(enemy_state["action_anim"])
-		if enemy_state["action_anim"] == "ranged":
-			candidates.append("attack")  # no dedicated ranged sheet: reuse attack
+		return "attack"
 	if enemy_state["animation_progress"] < 1.0:
-		candidates.append("move")
-	candidates.append("idle")
-	for candidate: String in candidates:
-		if _get_sheet(is_boss, candidate) != null:
-			return candidate
-	return ""
+		return "move"
+	return "idle"
 
 # Host calls this on damage; clients detect it from a health drop in the snapshot.
 func _trigger_hurt(enemy_state: Dictionary) -> void:
@@ -143,12 +135,6 @@ func _get_boss_tier() -> int:
 		return 3
 	else:
 		return 4
-
-func _get_boss_texture() -> Texture2D:
-	var tier: int = _get_boss_tier()
-	if game.boss_tier_textures.has(tier):
-		return game.boss_tier_textures[tier]
-	return game.boss_texture  # generic fallback, itself possibly null
 
 # ---------------------------------------------------------------------------
 # UI
@@ -510,8 +496,7 @@ func _advance_enemy_animations(delta: float) -> bool:
 			enemy_state["anim_time"] = 0.0
 		else:
 			enemy_state["anim_time"] += delta
-		if anim_name != "":
-			any_animating = true  # idle/move loop, so keep redrawing
+		any_animating = true  # idle/move loop, so keep redrawing
 	return any_animating
 
 # ---------------------------------------------------------------------------
@@ -533,15 +518,13 @@ func _draw_enemies() -> void:
 		var attack_flash: float = enemy_state["attack_flash_timer"] / game.combat_mgr.ATTACK_FLASH_DURATION
 
 		# Dying shrinks and fades the whole thing out over DEATH_ANIMATION_DURATION,
-		# on top of whatever art is drawn below (dedicated death sheet, plain
-		# static texture, or the fallback shape) -- so even a project with no
-		# death art at all still gets a readable "this one's finished" cue.
+		# on top of the death sheet below.
 		var death_eased: float = ease(enemy_state["death_progress"], -2.0) if is_dying else 0.0
 		var render_alpha: float = spawn_alpha * (1.0 - death_eased)
 		var render_scale: float = spawn_scale * lerp(1.0, 0.35, death_eased)
 
 		var anim_name: String = enemy_state["anim_name"]
-		var active_sheet: Texture2D = _get_sheet(is_boss, anim_name) if anim_name != "" else null
+		var active_sheet: Texture2D = _get_sheet(is_boss, anim_name)
 
 		var sprite_size: float = game.CELL_SIZE * (0.85 if is_boss else 0.55) * render_scale
 		var destination_rectangle: Rect2 = Rect2(
@@ -549,26 +532,14 @@ func _draw_enemies() -> void:
 			sprite_size, sprite_size
 		)
 
-		if active_sheet != null:
-			var def: Dictionary = ANIMS["boss" if is_boss else "enemy"][anim_name]
-			var frames: int = _frame_count(active_sheet, def)
-			var rows: int = def["rows"]
-			var frame_size: Vector2 = Vector2(float(active_sheet.get_width()) / frames, float(active_sheet.get_height()) / rows)
-			var frame_index: int = _anim_frame(active_sheet, def, enemy_state["anim_time"])
-			var row: int = mini(enemy_state["facing"], rows - 1)
-			var source_rectangle: Rect2 = Rect2(Vector2(frame_index * frame_size.x, row * frame_size.y), frame_size)
-			game.draw_texture_rect_region(active_sheet, destination_rectangle, source_rectangle, Color(1, 1, 1, render_alpha))
-		else:
-			var static_texture: Texture2D = _get_boss_texture() if is_boss else game.enemy_texture
-			if static_texture != null:
-				game.draw_texture_rect(static_texture, destination_rectangle, false, Color(1, 1, 1, render_alpha))
-			else:
-				var body_radius: float = game.CELL_SIZE * (0.35 if is_boss else 0.22) * render_scale
-				var body_color: Color = game.BOSS_COLOR if is_boss else ENEMY_COLOR
-				body_color.a = render_alpha
-				var outline_width: float = 3.0 if is_boss else 2.0
-				game.draw_circle(body_center, body_radius, body_color)
-				game.draw_arc(body_center, body_radius, 0.0, TAU, 16 if is_boss else 12, Color(body_color.darkened(0.5), render_alpha), outline_width)
+		var def: Dictionary = ANIMS["boss" if is_boss else "enemy"][anim_name]
+		var frames: int = _frame_count(active_sheet, def)
+		var rows: int = def["rows"]
+		var frame_size: Vector2 = Vector2(float(active_sheet.get_width()) / frames, float(active_sheet.get_height()) / rows)
+		var frame_index: int = _anim_frame(active_sheet, def, enemy_state["anim_time"])
+		var row: int = mini(enemy_state["facing"], rows - 1)
+		var source_rectangle: Rect2 = Rect2(Vector2(frame_index * frame_size.x, row * frame_size.y), frame_size)
+		game.draw_texture_rect_region(active_sheet, destination_rectangle, source_rectangle, Color(1, 1, 1, render_alpha))
 
 		if attack_flash > 0.0 and not is_dying:
 			var flash_radius: float = game.CELL_SIZE * (0.5 if is_boss else 0.35) * (1.0 + 0.5 * (1.0 - attack_flash))

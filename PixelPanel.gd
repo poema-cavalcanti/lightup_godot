@@ -22,9 +22,6 @@ extends RefCounted
 # band squeezed down to one pixel). Asking for less just gets that minimum, so
 # always lay content out from the returned texture's size, not the request.
 #
-# Like all the project's art it's optional: if assets/main_menu.png is
-# missing, build() returns null and the caller draws a plain fallback.
-#
 # If the art is ever redrawn, the numbers to update are the constants below
 # (all in the sheet's own pixels).
 # ---------------------------------------------------------------------------
@@ -46,11 +43,9 @@ const CLOSE_BOX_FROM_RIGHT: int = 12
 const CLOSE_BOX_TOP: int = 2
 const CLOSE_BOX_SIZE: int = 9
 
-# min_size is in screen pixels. Returns null if the art is missing.
+# min_size is in screen pixels.
 static func build(min_size: Vector2i, pixel_scale: int) -> Texture2D:
-	var sheet: Texture2D = AssetLoader.load_optional_texture("res://assets/" + SHEET_FILE)
-	if sheet == null:
-		return null
+	var sheet: Texture2D = AssetLoader.load_texture("res://assets/" + SHEET_FILE)
 	var sheet_image: Image = sheet.get_image()
 	if sheet_image.get_format() != Image.FORMAT_RGBA8:
 		sheet_image.convert(Image.FORMAT_RGBA8)

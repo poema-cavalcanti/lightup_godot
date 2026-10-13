@@ -87,23 +87,17 @@ func _build_pause_menu() -> void:
 		PixelButton.apply(node as Button, PAUSE_PIXEL_SCALE, PixelButton.PARCHMENT_SHADOW_COLOR)
 
 # Fills one parchment window: builds its art at the size the scene gave the
-# panel (or shows the plain fallback if the art is missing) and wires its X.
-func _prepare_panel(panel: Control, art_rect: TextureRect, fallback: Panel, close_button: Button, on_close: Callable) -> void:
+# panel and wires its X.
+func _prepare_panel(panel: Control, art_rect: TextureRect, close_button: Button, on_close: Callable) -> void:
 	var design_size: Vector2i = Vector2i(roundi(panel.offset_right - panel.offset_left), roundi(panel.offset_bottom - panel.offset_top))
 	if design_size.x % PAUSE_PIXEL_SCALE != 0 or design_size.y % PAUSE_PIXEL_SCALE != 0:
 		push_warning("PauseMenu.tscn: %s is %s, not a multiple of PAUSE_PIXEL_SCALE (%d) -- the parchment art will be slightly stretched." % [panel.name, design_size, PAUSE_PIXEL_SCALE])
-	var art: Texture2D = PixelPanel.build(design_size, PAUSE_PIXEL_SCALE)
-	art_rect.visible = art != null
-	fallback.visible = art == null
-	if art != null:
-		art_rect.texture = art
-	else:
-		close_button.text = "X"  # no drawn X to sit over, so show one
+	art_rect.texture = PixelPanel.build(design_size, PAUSE_PIXEL_SCALE)
 	close_button.pressed.connect(on_close)
 
 func _setup_main_view() -> void:
 	var show_admin_buttons: bool = (not NetworkManager.is_multiplayer) or game.multiplayer.is_server()
-	_prepare_panel(_node("MainPanel"), _node("MainArt"), _node("MainFallback"), _node("MainClose"), _close_pause_menu)
+	_prepare_panel(_node("MainPanel"), _node("MainArt"), _node("MainClose"), _close_pause_menu)
 
 	# game.status_label already carries the "N / M white cells lit" text (set in
 	# GameUIManager._update_status()), on a placeholder label made when the level
@@ -136,7 +130,7 @@ func _setup_settings_view() -> void:
 	# The X here goes back to the pause menu, same as the Back button -- it also
 	# has to drop any half-finished key-rebind capture, which is why it's not
 	# just "close the whole menu".
-	_prepare_panel(_node("SettingsPanel"), _node("SettingsArt"), _node("SettingsFallback"), _node("SettingsClose"), _on_pause_settings_back_pressed)
+	_prepare_panel(_node("SettingsPanel"), _node("SettingsArt"), _node("SettingsClose"), _on_pause_settings_back_pressed)
 
 	pause_fullscreen_button = _node("FullscreenButton")
 	pause_fullscreen_button.pressed.connect(_on_pause_fullscreen_pressed)

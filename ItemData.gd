@@ -90,7 +90,7 @@ static func get_item_icon(item_id: String) -> Texture2D:
 	var default_filename: String = DEFAULT_ICON_BY_SLOT.get(get_item(item_id).get("slot", ""), "")
 	if default_filename == "":
 		return null
-	return AssetLoader.load_optional_texture("res://assets/" + default_filename)
+	return AssetLoader.load_texture("res://assets/" + default_filename)
 
 # Which sheet kind's overlay art to borrow when an item has none of its own
 # for a given kind -- attack has no dedicated hat art yet, so it uses run's.
@@ -107,10 +107,10 @@ static func get_item_overlay_texture(item_id: String, sheet_kind: String, direct
 	var filename: String = overlays.get(resolved_kind, {}).get(direction, "")
 	if filename == "":
 		return null
-	return AssetLoader.load_optional_texture("res://assets/" + filename)
+	return AssetLoader.load_texture("res://assets/" + filename)
 
 static func _load_item_asset(item_id: String, field: String) -> Texture2D:
 	var filename: String = get_item(item_id).get(field, "")
 	if filename == "":
 		return null
-	return AssetLoader.load_optional_texture("res://assets/" + filename)
+	return AssetLoader.load_texture("res://assets/" + filename)
