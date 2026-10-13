@@ -10,6 +10,15 @@ func _init(game_ref: Node2D) -> void:
 const PLAYER_ATTACK_DAMAGE: int = 5
 const PLAYER_ATTACK_COOLDOWN: float = 0.4
 const PROJECTILE_SPEED_CELLS_PER_SECOND: float = 10.0
+# projectile.png is a horizontal strip of PROJECTILE_FRAME_WIDTH_PIXELS-wide
+# frames (32x16 each, 9 frames). The first PROJECTILE_FLIGHT_FRAME_COUNT frames
+# play once across the flight (art faces right, so it just rotates to the
+# travel direction); the remaining frames are an impact burst that plays once,
+# upright, at the target after arrival. Purely visual -- damage lands at fire time.
+const PROJECTILE_FRAME_WIDTH_PIXELS: int = 32
+const PROJECTILE_FLIGHT_FRAME_COUNT: int = 5
+const PROJECTILE_IMPACT_FRAME_DURATION: float = 0.07  # seconds per impact frame
+const PROJECTILE_SPRITE_SCALE: float = 2.0  # multiple of native pixels (2.0 = a 32px-wide frame spans one 64px cell)
 const ATTACK_FLASH_DURATION: float = 0.25  # purely cosmetic swing/hit flash, both player and enemy
 
 func _tick_combat_simulation(delta: float) -> void:
@@ -145,39 +154,69 @@ func _sync_spawn_projectile(from_row: int, from_col: int, to_row: int, to_col: i
 		"to_position": to_position,
 		"progress": 0.0,
 		"duration": flight_duration,
+		"impact_time": -1.0,  # < 0 while in flight; counts up from 0 once it has arrived
 	})
 	game.enemy_mgr._trigger_action_animation(shooter_enemy_id, "ranged")
 
 func _advance_projectiles(delta: float) -> bool:
 	var had_projectiles: bool = not game.projectiles.is_empty()
+	var impact_frame_count: int = _projectile_impact_frame_count()
+	var impact_duration: float = impact_frame_count * PROJECTILE_IMPACT_FRAME_DURATION
 	var still_active: Array[Dictionary] = []
 	for projectile: Dictionary in game.projectiles:
+		if projectile["impact_time"] >= 0.0:
+			projectile["impact_time"] += delta
+			if projectile["impact_time"] < impact_duration:
+				still_active.append(projectile)
+			continue
 		var duration: float = projectile["duration"]
 		var progress: float = projectile["progress"] + delta / duration
 		if progress < 1.0:
 			projectile["progress"] = progress
-			still_active.append(projectile)
+		else:
+			# Arrived: switch to the impact burst (dropped right away if the
+			# strip has no impact frames).
+			projectile["progress"] = 1.0
+			projectile["impact_time"] = 0.0
+			if impact_frame_count == 0:
+				continue
+		still_active.append(projectile)
 	game.projectiles = still_active
 	return had_projectiles
 
+func _projectile_total_frame_count() -> int:
+	return maxi(1, roundi(float(game.projectile_texture.get_width()) / float(PROJECTILE_FRAME_WIDTH_PIXELS)))
+
+func _projectile_impact_frame_count() -> int:
+	return maxi(0, _projectile_total_frame_count() - PROJECTILE_FLIGHT_FRAME_COUNT)
+
 func _draw_projectiles() -> void:
+	var texture: Texture2D = game.projectile_texture
+	var frame_size: Vector2 = Vector2(PROJECTILE_FRAME_WIDTH_PIXELS, texture.get_height())
+	var draw_size: Vector2 = frame_size * PROJECTILE_SPRITE_SCALE
+	var impact_frame_count: int = _projectile_impact_frame_count()
 	for projectile: Dictionary in game.projectiles:
 		var from_position: Vector2 = projectile["from_position"]
 		var to_position: Vector2 = projectile["to_position"]
-		var progress: float = projectile["progress"]
-		var current_position: Vector2 = from_position.lerp(to_position, progress)
+		var current_position: Vector2 = from_position.lerp(to_position, projectile["progress"])
 		var center: Vector2 = game._tile_center_to_pixel(current_position.y, current_position.x)
 
-		if game.projectile_texture != null:
-			var sprite_size: float = game.CELL_SIZE * 0.35
-			var travel_direction: Vector2 = to_position - from_position
-			var travel_angle: float = travel_direction.angle() if travel_direction.length() > 0.0 else 0.0
-			game.draw_set_transform(center, travel_angle, Vector2(1, 1))
-			game.draw_texture_rect(game.projectile_texture, Rect2(-sprite_size / 2.0, -sprite_size / 2.0, sprite_size, sprite_size), false)
-			game.draw_set_transform(Vector2.ZERO, 0.0, Vector2(1, 1))
+		var frame_index: int
+		var rotation_angle: float = 0.0
+		if projectile["impact_time"] >= 0.0:
+			# Impact burst: upright, not rotated with the shot.
+			var impact_frame: int = mini(int(projectile["impact_time"] / PROJECTILE_IMPACT_FRAME_DURATION), impact_frame_count - 1)
+			frame_index = PROJECTILE_FLIGHT_FRAME_COUNT + impact_frame
 		else:
-			game.draw_circle(center, game.CELL_SIZE * 0.09, game.BOSS_COLOR)
-			game.draw_arc(center, game.CELL_SIZE * 0.09, 0.0, TAU, 10, Color.WHITE, 1.5)
+			# Flight: play the flight frames once, stretched over the whole trip.
+			frame_index = mini(int(projectile["progress"] * PROJECTILE_FLIGHT_FRAME_COUNT), PROJECTILE_FLIGHT_FRAME_COUNT - 1)
+			var travel_direction: Vector2 = to_position - from_position
+			rotation_angle = travel_direction.angle() if travel_direction.length() > 0.0 else 0.0
+
+		var source_rectangle: Rect2 = Rect2(Vector2(frame_index * frame_size.x, 0.0), frame_size)
+		game.draw_set_transform(center, rotation_angle, Vector2(1, 1))
+		game.draw_texture_rect_region(texture, Rect2(-draw_size / 2.0, draw_size), source_rectangle)
+		game.draw_set_transform(Vector2.ZERO, 0.0, Vector2(1, 1))
 
 func _update_combat_status_label() -> void:
 	if game.combat_status_label == null:

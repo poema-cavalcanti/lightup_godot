@@ -100,7 +100,8 @@ func _load_pixel_art() -> void:
 		if tier_texture != null:
 			game.boss_tier_textures[tier] = tier_texture
 
-	game.projectile_texture = _load_optional_texture("projectile.png")
+	# Required art (no fallback): CombatManager._draw_projectiles() assumes this exists.
+	game.projectile_texture = load(ASSET_DIRECTORY + "projectile.png") as Texture2D
 
 	game.background_texture = _load_optional_texture("background.png")
 
