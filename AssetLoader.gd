@@ -6,10 +6,10 @@ extends RefCounted
 # Two loaders live here:
 #   - load_texture(): REQUIRED art. There is no fallback -- a missing file is
 #     a load error and the caller gets null. Everything that ships with the
-#     game (walls, floors, bulb, player/enemy sheets, borders, projectile, UI
-#     skins, item art) goes through this.
-#   - load_optional_texture(): art that may legitimately not exist yet (boss
-#     tier 4, the static boss images, cutscene art). Returns null if missing.
+#     game (walls, floors, bulb, player/enemy/boss sheets, borders, projectile,
+#     UI skins, item art) goes through this.
+#   - load_optional_texture(): art that may legitimately not exist (cutscene
+#     art). Returns null if missing.
 #
 # Both are static, shared and cached, and used directly by Town.gd, Cutscene.gd
 # and ItemData.gd too, so there's exactly one place that knows how to load a
@@ -49,7 +49,7 @@ func _init(game_ref: Node2D) -> void:
 
 const ASSET_DIRECTORY: String = "res://assets/"
 const WALL_CLUE_NUMBER_COUNT: int = 5  # wall_0.png .. wall_4.png
-const BOSS_TIER_COUNT: int = 4  # boss_tier_1.png .. boss_tier_4.png (levels 1-3 / 4-6 / 7-9 / 10)
+const BOSS_TIER_COUNT: int = 4  # boss_tier_1_* .. boss_tier_4_* sheets (levels 1-3 / 4-6 / 7-9 / 10)
 
 func _load_pixel_art() -> void:
 	game.wall_textures.clear()
@@ -82,21 +82,11 @@ func _load_pixel_art() -> void:
 	for anim: String in ["idle", "move", "attack", "hurt", "death"]:
 		game.enemy_sheets["enemy_" + anim] = _texture("enemy_%s_sheet.png" % ("walk" if anim == "move" else anim))
 
-	# Boss art stays optional: the tier 4 sheets and the static boss images
-	# (boss.png, boss_tier_N.png) don't exist yet, and Enemy.gd falls back from
-	# sheet -> static image -> drawn shape for whichever are missing.
-	game.boss_texture = _load_optional_texture("boss.png")
+	# Boss sheets, one set per tier (boss_tier_N_{idle,walk,attack,hurt,death}).
+	# The tier's *_run_sheet.png files exist but aren't used yet.
 	for tier in range(1, BOSS_TIER_COUNT + 1):
 		for anim: String in ["idle", "move", "attack", "hurt", "death"]:
-			var boss_sheet: Texture2D = _load_optional_texture("boss_tier_%d_%s_sheet.png" % [tier, "walk" if anim == "move" else anim])
-			if boss_sheet != null:
-				game.enemy_sheets["boss_tier_%d_%s" % [tier, anim]] = boss_sheet
-
-	game.boss_tier_textures.clear()
-	for tier in range(1, BOSS_TIER_COUNT + 1):
-		var tier_texture: Texture2D = _load_optional_texture("boss_tier_%d.png" % tier)
-		if tier_texture != null:
-			game.boss_tier_textures[tier] = tier_texture
+			game.enemy_sheets["boss_tier_%d_%s" % [tier, anim]] = _texture("boss_tier_%d_%s_sheet.png" % [tier, "walk" if anim == "move" else anim])
 
 	game.projectile_texture = _texture("projectile.png")
 
@@ -111,9 +101,6 @@ func _load_pixel_art() -> void:
 
 func _texture(filename: String) -> Texture2D:
 	return AssetLoader.load_texture(ASSET_DIRECTORY + filename)
-
-func _load_optional_texture(filename: String) -> Texture2D:
-	return AssetLoader.load_optional_texture(ASSET_DIRECTORY + filename)
 
 # Each wall (generic "wall", or "wall_0" .. "wall_4") has two images:
 # "plain" (base_name.png, one static frame) and "lit" (base_name_lit.png, a

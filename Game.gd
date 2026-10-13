@@ -45,8 +45,6 @@ extends Node2D
 #     standing still, run plays while a hop is in progress, attack/interact
 #     are brief one-shots (interact also loops while blocking).
 #   - enemy_*_sheet.png, boss_tier_N_*_sheet.png : animated enemy/boss sheets.
-#     Boss art is the one thing still optional (tier 4 isn't drawn yet): a boss
-#     falls back sheet -> static image -> drawn shape.
 #   - projectile.png, border_*.png      : required.
 #
 # Player and enemy movement is logically instant (row/col update
@@ -93,7 +91,6 @@ const COMBAT_MAX_HEALTH: int = 100
 const CONFLICT_SPAWN_INTERVAL: float = 5.0
 const RESPAWN_DURATION: float = 10.0
 const MOVE_ANIMATION_DURATION: float = 0.15
-const BOSS_COLOR: Color = Color(0.35, 0.05, 0.45)
 const LEVEL_TIME_LIMIT: float = 300.0  # 5 minutes
 const LEVEL_TIMER_BONUS_SECONDS: float = 30.0  # extends the boss deadline when a clue is freshly satisfied
 
@@ -221,14 +218,10 @@ var player_attack_sheet_texture: Texture2D = null
 var player_interact_sheet_texture: Texture2D = null
 var player_idle_sheet_texture: Texture2D = null
 var player_run_sheet_texture: Texture2D = null
-var boss_texture: Texture2D = null
-var boss_tier_textures: Dictionary = {}  # tier (1-4) -> Texture2D, see _get_boss_texture()
 var projectile_texture: Texture2D = null
-# Animated enemy/boss sheets -- each an optional single-row strip of equal-
-# width square frames (frame count inferred from width/height, no fixed
-# pixel size like the player sheets). Any of these being null just falls
-# back to the plain static boss_texture/boss_tier_textures
-# above for that moment. See assets/README.md for the full convention.
+# Animated enemy/boss sheets -- each a multi-row strip of equal-size square
+# frames (4 rows: down/up/left/right; frame count inferred from width/height).
+# See assets/README.md for the full convention.
 var enemy_sheets: Dictionary = {}  # "enemy_idle", "boss_tier_1_attack", ... -> Texture2D (see Enemy.gd ANIMS)
 # "top", "bottom", "left", "right", "top_left", "top_right", "bottom_left",
 # "bottom_right" -> Texture2D (loaded from border_*.png / border_corner_*.png).
