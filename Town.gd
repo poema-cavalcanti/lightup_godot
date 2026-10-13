@@ -121,6 +121,9 @@ func _ready() -> void:
 	animation_to = visual_position
 	%YesButton.pressed.connect(_on_confirm_yes_pressed)
 	%NoButton.pressed.connect(_on_confirm_no_pressed)
+	# The shared green button look (see PixelButton); stock buttons if assets/buttons.png is missing.
+	PixelButton.apply(%YesButton)
+	PixelButton.apply(%NoButton)
 	%ShopCloseButton.pressed.connect(_on_shop_close_pressed)
 
 func _load_optional_texture(filename: String) -> Texture2D:
@@ -318,6 +321,7 @@ func _add_shop_item_card(item_id: String) -> void:
 
 	var buy_button: Button = card.get_node("BuyButton")
 	buy_button.pressed.connect(_on_buy_item_pressed.bind(item_id, owned_label, status_label))
+	PixelButton.apply(buy_button)  # the shared green button look; default button if assets/buttons.png is missing
 
 func _on_buy_item_pressed(item_id: String, owned_label: Label, status_label: Label) -> void:
 	var item: Dictionary = ItemData.get_item(item_id)
