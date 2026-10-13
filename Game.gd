@@ -32,7 +32,9 @@ extends Node2D
 # Dropping files into res://assets/ (see assets/README.md) switches
 # individual pieces over to art automatically:
 #   - wall.png / wall_0.png..wall_4.png : black cell tiles, generic and
-#     per-clue-number, checked independently with a fallback chain.
+#     per-clue-number, checked independently with a fallback chain. Each
+#     also has a wall_lit.png / wall_N_lit.png animation strip (horizontal
+#     strip of square frames) shown while lit.
 #   - floor_0.png, floor_1.png, ...     : white cell tile variants, picked
 #     per-cell by a hash of (row, col, puzzle) so the scatter looks random but is
 #     stable (no flicker) and identical on every peer.
@@ -113,6 +115,7 @@ var grid: Array = []              # grid[row][col] = {type, number}
 var bulbs: Array = []             # bulbs[row][col] = bool
 var marks: Array = []             # marks[row][col] = bool  (player notes, M key)
 var lit: Array = []               # lit[row][col] = bool (computed each frame)
+var wall_lit: Array = []          # wall_lit[row][col] = bool: black cell is in line of sight of at least one bulb
 var conflicting_bulbs: Dictionary = {}  # {[row,col]: true} bulbs that illuminate another bulb
 var error_flash_cells: Array = []  # [[row,col], ...] flagged by Check Answer when not yet solved
 var error_flash_timer: float = 0.0
@@ -224,6 +227,7 @@ var bulb_texture: Texture2D = null
 var bulb_frame_count: int = 1
 var bulb_anim_time: float = 0.0  # advanced in _process(), so it freezes with the pause menu like the enemies do
 const BULB_FRAME_DURATION: float = 0.12  # seconds per frame (6 frames = a ~0.7s loop)
+const WALL_FRAME_DURATION: float = 0.12  # seconds per frame of a lit wall's animation strip (shares bulb_anim_time)
 const BULB_SPRITE_SCALE: float = 1.0  # 1.0 = each frame drawn at CELL_SIZE (native pixel scale for 64x64 frames)
 var mark_texture: Texture2D = null
 var player_sheet_texture: Texture2D = null
@@ -743,13 +747,23 @@ func _draw() -> void:
 			var cell_has_art: bool = false
 
 			if cell_data["type"] == CellType.BLACK:
-				var is_top_wall: bool = row + 1 < rows and grid[row + 1][col]["type"] == CellType.BLACK
-				var is_wall_lit: bool = cell_data["number"] >= 0 and puzzle_mgr._bulb_neighbor_count(row, col) == cell_data["number"]
-				var wall_result: Dictionary = asset_mgr._get_wall_texture(cell_data["number"], is_top_wall, is_wall_lit)
+				var wall_number: int = cell_data["number"]
+				# Clues 1-4 light up while exactly satisfied; the 0 clue and the
+				# blank wall light up while any bulb has line of sight to them.
+				var is_wall_lit: bool = (puzzle_mgr._bulb_neighbor_count(row, col) == wall_number) if wall_number >= 1 else wall_lit[row][col]
+				var wall_result: Dictionary = asset_mgr._get_wall_texture(wall_number, is_wall_lit)
 				var wall_texture: Texture2D = wall_result["texture"]
 				if wall_texture != null:
 					cell_has_art = true
-					draw_texture_rect(wall_texture, cell_rectangle, false)
+					if wall_result["animated"]:
+						var wall_frames: int = AssetLoader.wall_frame_count(wall_texture)
+						# Per-cell frame offset (same trick as the bulbs) so a field of
+						# lit walls doesn't pulse in lockstep.
+						var wall_frame: int = (int(bulb_anim_time / WALL_FRAME_DURATION) + row * 5 + col * 3) % wall_frames
+						var wall_frame_width: float = float(wall_texture.get_width()) / float(wall_frames)
+						draw_texture_rect_region(wall_texture, cell_rectangle, Rect2(wall_frame * wall_frame_width, 0.0, wall_frame_width, float(wall_texture.get_height())))
+					else:
+						draw_texture_rect(wall_texture, cell_rectangle, false)
 				else:
 					draw_rect(cell_rectangle, Color(0.13, 0.13, 0.16))
 				# Skip the text when this cell's own wall art was used --

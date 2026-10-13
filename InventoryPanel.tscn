@@ -1,6 +1,6 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene format=3 uid="uid://dsfslqf1e1adb"]
 
-[ext_resource type="Script" path="res://InventoryPanel.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://dj0a4m1g8b5ev" path="res://InventoryPanel.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://InventorySlot.tscn" id="2_slot"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_clear"]
@@ -8,22 +8,20 @@
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover"]
 bg_color = Color(1, 1, 1, 0.22)
 
-[node name="InventoryPanel" type="CanvasLayer"]
-script = ExtResource("1_script")
+[node name="InventoryPanel" type="CanvasLayer" unique_id=1683005444]
 layer = 10
 visible = false
+script = ExtResource("1_script")
 
-[node name="Dim" type="ColorRect" parent="."]
-layout_mode = 3
+[node name="Dim" type="ColorRect" parent="." unique_id=2100874847]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
 color = Color(0, 0, 0, 0.55)
 
-[node name="Frame" type="Control" parent="Dim"]
+[node name="Frame" type="Control" parent="Dim" unique_id=34483520]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 8
@@ -39,18 +37,18 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Fallback" type="Control" parent="Dim/Frame"]
+[node name="Fallback" type="Control" parent="Dim/Frame" unique_id=2114315810]
 unique_name_in_owner = true
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-visible = false
 mouse_filter = 2
 
-[node name="Border" type="ColorRect" parent="Dim/Frame/Fallback"]
+[node name="Border" type="ColorRect" parent="Dim/Frame/Fallback" unique_id=747288086]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -60,7 +58,7 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.376471, 0.223529, 0.156863, 1)
 
-[node name="Body" type="ColorRect" parent="Dim/Frame/Fallback"]
+[node name="Body" type="ColorRect" parent="Dim/Frame/Fallback" unique_id=1435011941]
 layout_mode = 0
 offset_left = 10.0
 offset_top = 38.0
@@ -69,17 +67,16 @@ offset_bottom = 438.0
 mouse_filter = 2
 color = Color(0.898039, 0.839216, 0.631373, 1)
 
-[node name="Bar" type="ColorRect" parent="Dim/Frame/Fallback"]
+[node name="Bar" type="ColorRect" parent="Dim/Frame/Fallback" unique_id=1744370270]
 layout_mode = 0
-offset_left = 0.0
-offset_top = 0.0
 offset_right = 640.0
 offset_bottom = 36.0
 mouse_filter = 2
 color = Color(0.313726, 0.662745, 0.470588, 1)
 
-[node name="Art" type="TextureRect" parent="Dim/Frame"]
+[node name="Art" type="TextureRect" parent="Dim/Frame" unique_id=165936141]
 unique_name_in_owner = true
+texture_filter = 1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -87,23 +84,19 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture_filter = 1
 expand_mode = 1
-stretch_mode = 0
 
-[node name="TitleLabel" type="Label" parent="Dim/Frame"]
+[node name="TitleLabel" type="Label" parent="Dim/Frame" unique_id=220105238]
 layout_mode = 0
 offset_left = 228.0
-offset_top = 0.0
 offset_right = 568.0
 offset_bottom = 36.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.1, 0.16, 0.16, 1)
 theme_override_font_sizes/font_size = 22
 text = "Inventory"
 vertical_alignment = 1
 
-[node name="CloseButton" type="Button" parent="Dim/Frame"]
+[node name="CloseButton" type="Button" parent="Dim/Frame" unique_id=250194615]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 598.0
@@ -112,33 +105,33 @@ offset_right = 628.0
 offset_bottom = 33.0
 focus_mode = 0
 theme_override_colors/font_color = Color(0.1, 0.16, 0.16, 1)
-theme_override_colors/font_hover_color = Color(0.1, 0.16, 0.16, 1)
 theme_override_colors/font_pressed_color = Color(0.1, 0.16, 0.16, 1)
+theme_override_colors/font_hover_color = Color(0.1, 0.16, 0.16, 1)
 theme_override_colors/font_hover_pressed_color = Color(0.1, 0.16, 0.16, 1)
 theme_override_styles/normal = SubResource("StyleBoxEmpty_clear")
-theme_override_styles/hover = SubResource("StyleBoxFlat_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_hover")
 theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_hover")
 theme_override_styles/disabled = SubResource("StyleBoxEmpty_clear")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_clear")
 
-[node name="ArmorSlot" parent="Dim/Frame" instance=ExtResource("2_slot")]
+[node name="ArmorSlot" parent="Dim/Frame" unique_id=700293358 instance=ExtResource("2_slot")]
 unique_name_in_owner = true
-layout_mode = 0
+anchors_preset = 0
 offset_left = 50.0
 offset_top = 119.0
 offset_right = 150.0
 offset_bottom = 219.0
 
-[node name="WeaponSlot" parent="Dim/Frame" instance=ExtResource("2_slot")]
+[node name="WeaponSlot" parent="Dim/Frame" unique_id=1112875493 instance=ExtResource("2_slot")]
 unique_name_in_owner = true
-layout_mode = 0
+anchors_preset = 0
 offset_left = 50.0
 offset_top = 250.0
 offset_right = 150.0
 offset_bottom = 350.0
 
-[node name="ItemScroll" type="ScrollContainer" parent="Dim/Frame"]
+[node name="ItemScroll" type="ScrollContainer" parent="Dim/Frame" unique_id=223299537]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 228.0
@@ -147,32 +140,30 @@ offset_right = 616.0
 offset_bottom = 376.0
 horizontal_scroll_mode = 0
 
-[node name="ItemGrid" type="GridContainer" parent="Dim/Frame/ItemScroll"]
+[node name="ItemGrid" type="GridContainer" parent="Dim/Frame/ItemScroll" unique_id=1503916936]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 8
 columns = 5
 
-[node name="EmptyLabel" type="Label" parent="Dim/Frame"]
+[node name="EmptyLabel" type="Label" parent="Dim/Frame" unique_id=1842935414]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 232.0
 offset_top = 54.0
 offset_right = 616.0
 offset_bottom = 80.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.24, 0.13, 0.1, 1)
 theme_override_font_sizes/font_size = 16
 text = "You haven't bought anything yet."
 
-[node name="HintLabel" type="Label" parent="Dim/Frame"]
+[node name="HintLabel" type="Label" parent="Dim/Frame" unique_id=443823841]
 layout_mode = 0
 offset_left = 228.0
 offset_top = 390.0
 offset_right = 616.0
 offset_bottom = 430.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.24, 0.13, 0.1, 1)
 theme_override_font_sizes/font_size = 14
 text = "Click an item to equip it, or click a slot to unequip.  Press I to close."

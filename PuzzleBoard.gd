@@ -52,12 +52,19 @@ func is_black(row: int, col: int) -> bool:
 
 func _compute_lit() -> void:
 	game.lit.clear()
+	game.wall_lit.clear()
 	for row in range(game.rows):
 		var lit_row: Array = []
+		var wall_lit_row: Array = []
 		for col in range(game.cols):
 			lit_row.append(false)
+			wall_lit_row.append(false)
 		game.lit.append(lit_row)
+		game.wall_lit.append(wall_lit_row)
 
+	# Each bulb lights its own cell and the white cells in its row/column up to
+	# the first wall in each direction. That first wall is itself "seen" by the
+	# bulb, so it's flagged in wall_lit (used by the clue-0 and blank walls).
 	for row in range(game.rows):
 		for col in range(game.cols):
 			if not game.bulbs[row][col]:
@@ -65,18 +72,22 @@ func _compute_lit() -> void:
 			game.lit[row][col] = true
 			for scan_row in range(row - 1, -1, -1):
 				if is_black(scan_row, col):
+					game.wall_lit[scan_row][col] = true
 					break
 				game.lit[scan_row][col] = true
 			for scan_row in range(row + 1, game.rows):
 				if is_black(scan_row, col):
+					game.wall_lit[scan_row][col] = true
 					break
 				game.lit[scan_row][col] = true
 			for scan_col in range(col - 1, -1, -1):
 				if is_black(row, scan_col):
+					game.wall_lit[row][scan_col] = true
 					break
 				game.lit[row][scan_col] = true
 			for scan_col in range(col + 1, game.cols):
 				if is_black(row, scan_col):
+					game.wall_lit[row][scan_col] = true
 					break
 				game.lit[row][scan_col] = true
 
