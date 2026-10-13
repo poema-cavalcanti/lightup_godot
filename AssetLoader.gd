@@ -47,7 +47,7 @@ const BOSS_TIER_COUNT: int = 4  # boss_tier_1.png .. boss_tier_4.png (levels 1-3
 
 func _load_pixel_art() -> void:
 	game.wall_textures.clear()
-	_load_wall_variant_set(-1, "wall")  # blank wall has no clue number and no "lit" concept
+	_load_wall_variant_set(-1, "wall")  # blank wall: no clue number
 	for clue_number in range(WALL_CLUE_NUMBER_COUNT):
 		_load_wall_variant_set(clue_number, "wall_%d" % clue_number)
 
@@ -138,62 +138,55 @@ func _load_pixel_art() -> void:
 func _load_optional_texture(filename: String) -> Texture2D:
 	return AssetLoader.load_optional_texture(ASSET_DIRECTORY + filename)
 
-# Each clue's wall art can have up to 4 variants, named off a shared base
-# (e.g. "wall_2" -> wall_2.png, wall_2_top.png, wall_2_lit.png,
-# wall_2_top_lit.png). Any missing variant is just left out of the
-# dictionary -- _get_wall_texture() below degrades gracefully when a more
-# specific combination (top+lit) isn't available.
+# Each wall (generic "wall", or "wall_0" .. "wall_4") has up to 2 variants:
+# "plain" (base_name.png, one static frame) and "lit" (base_name_lit.png, a
+# horizontal strip of equal square frames -- frame count is width / height, so
+# a single 64x64 image is just a 1-frame "animation"). A missing variant is 
+# just left out of the dictionary -- _get_wall_texture() below degrades 
+# gracefully.
 func _load_wall_variant_set(clue_number: int, base_name: String) -> void:
 	var variants: Dictionary = {}
 	var plain_texture: Texture2D = _load_optional_texture(base_name + ".png")
 	if plain_texture != null:
 		variants["plain"] = plain_texture
-	var top_texture: Texture2D = _load_optional_texture(base_name + "_top.png")
-	if top_texture != null:
-		variants["top"] = top_texture
 	var lit_texture: Texture2D = _load_optional_texture(base_name + "_lit.png")
 	if lit_texture != null:
 		variants["lit"] = lit_texture
-	var top_lit_texture: Texture2D = _load_optional_texture(base_name + "_top_lit.png")
-	if top_lit_texture != null:
-		variants["top_lit"] = top_lit_texture
 	if not variants.is_empty():
 		game.wall_textures[clue_number] = variants
 
-# is_top: true when the cell directly below this one is also a wall (any
-# clue), per the player's request -- draws a "capped" top edge instead of
-# the plain repeating wall texture. is_lit: true when a numbered wall's
-# clue is currently exactly satisfied (see PuzzleBoard._bulb_neighbor_count),
-# regardless of whether the puzzle as a whole is solved yet.
+# Number of equal square frames in a wall texture strip (width / height).
+static func wall_frame_count(texture: Texture2D) -> int:
+	if texture == null or texture.get_height() <= 0:
+		return 1
+	return maxi(1, roundi(float(texture.get_width()) / float(texture.get_height())))
+
+# is_lit: whether this wall is currently lit -- decided by the caller (see
+# Game._draw): clues 1-4 are lit while exactly satisfied (adjacent bulb
+# count == clue), while the 0 clue and the blank wall are lit whenever at
+# least one bulb has line of sight to them (PuzzleBoard.wall_lit).
 #
-# Tries the most specific combination first and degrades: top+lit -> top
-# -> lit -> plain, then falls back to the blank wall's own variants (which
-# have no "lit" concept, so that fallback never asks for one) if this
-# clue's set doesn't have a plain texture at all.
+# Degrades: lit -> plain, then falls back to the blank wall's own variants if
+# this clue's set has no art for it at all.
 #
-# Returns {"texture": Texture2D (may be null), "has_own_art": bool} --
-# has_own_art is true only when the texture came from this specific clue
-# number's own variant set (any of the 4), never from the generic blank-
-# wall fallback. The caller uses that to decide whether the clue number
-# still needs to be drawn as text for legibility: a numbered wall's own
-# art is assumed to already encode the number visually, but the generic
-# fallback tile obviously doesn't.
-func _get_wall_texture(clue_number: int, is_top: bool = false, is_lit: bool = false) -> Dictionary:
+# Returns {"texture": Texture2D (may be null), "has_own_art": bool,
+# "animated": bool}. has_own_art is true only when the texture came from this
+# specific clue number's own variant set, never from the generic blank-wall
+# fallback (the caller uses that to decide whether the clue number still needs
+# drawing as text). animated is true when the texture is the lit strip, which
+# the caller should play frame by frame instead of drawing whole.
+func _get_wall_texture(clue_number: int, is_lit: bool = false) -> Dictionary:
 	var variants: Dictionary = game.wall_textures.get(clue_number, {})
 	var candidate_keys: Array[String] = ["plain"]
-	if is_top and is_lit:
-		candidate_keys = ["top_lit", "top", "lit", "plain"]
-	elif is_top:
-		candidate_keys = ["top", "plain"]
-	elif is_lit:
+	if is_lit:
 		candidate_keys = ["lit", "plain"]
 	for key in candidate_keys:
 		if variants.has(key):
-			return {"texture": variants[key], "has_own_art": true}
+			return {"texture": variants[key], "has_own_art": true, "animated": key == "lit"}
 	if clue_number != -1 and game.wall_textures.has(-1):
-		var fallback_result: Dictionary = _get_wall_texture(-1, is_top, false)
-		return {"texture": fallback_result["texture"], "has_own_art": false}
-	return {"texture": null, "has_own_art": false}
+		var fallback_result: Dictionary = _get_wall_texture(-1, is_lit)
+		return {"texture": fallback_result["texture"], "has_own_art": false, "animated": fallback_result["animated"]}
+	return {"texture": null, "has_own_art": false, "animated": false}
 
 # Levels 1-3 -> tier 1, 4-6 -> tier 2, 7-9 -> tier 3, 10 -> tier 4. Outside
 # campaign mode (Endless Mode, Multiplayer) there's no level number at all,
