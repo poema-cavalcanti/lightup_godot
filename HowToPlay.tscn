@@ -1,0 +1,86 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://HowToPlay.gd" id="1"]
+
+[node name="HowToPlay" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="BackButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 16.0
+offset_right = 140.0
+offset_bottom = 56.0
+text = "Back"
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 66.0
+offset_right = 300.0
+offset_bottom = 106.0
+theme_override_font_sizes/font_size = 28
+text = "How to Play"
+
+[node name="Scroll" type="ScrollContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 116.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="Margin" type="MarginContainer" parent="Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 60
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 60
+theme_override_constants/margin_bottom = 40
+
+[node name="Content" type="VBoxContainer" parent="Scroll/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="RulesHeading" type="Label" parent="Scroll/Margin/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "The rules"
+
+[node name="RulesBody" type="Label" parent="Scroll/Margin/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 15
+text = "Light Up is played on a grid of black and white cells. Your goal is to place light bulbs on white cells so that every white cell is lit.\n\nA bulb lights every cell in its row and column, in all four directions, until a black cell (or the edge of the grid) blocks the light.\n\nNo bulb may light up another bulb. If two bulbs can see each other, that's not allowed.\n\nSome black cells have a number in them. That number tells you exactly how many bulbs must be placed on the white cells directly touching that black cell's edges (up, down, left, right) -- no more, no fewer.\n\nThe puzzle is solved once every white cell is lit, no two bulbs see each other, and every numbered black cell has exactly the right number of bulbs next to it.\n\nWatch out: leaving two bulbs lighting each other unresolved for 5 seconds spawns an enemy at the conflict, and another every 5 seconds it stays unresolved. Enemies walk toward the nearest player and attack when adjacent. Solving the puzzle clears every enemy on the board.\n\nEach level also has a 5-minute clock. If it runs out while any tile is still unlit, a boss spawns with 50 health -- it can melee when adjacent or shoot at range along a clear row or column, but its ranged attack can't go through walls. Correctly satisfying a numbered clue adds 30 seconds to that clock the first time you get it right, so careful, correct play buys you breathing room."
+autowrap_mode = 2
+
+[node name="Spacer1" type="Control" parent="Scroll/Margin/Content"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+
+[node name="ControlsHeading" type="Label" parent="Scroll/Margin/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Controls"
+
+[node name="ControlsBody" type="Label" parent="Scroll/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 15
+text = "{move_up}/{move_left}/{move_down}/{move_right}  --  walk your player character around the grid, one cell at a time. Black cells are walls -- you can't walk through them.\n\n{place_light}  --  place a bulb at your feet, or pick it back up if one's already there.\n\nM  --  toggle a pencil \"mark\" at your feet -- a note to yourself (e.g. \"don't put a bulb here\"). Purely a scratchpad, it has no effect on solving.\n\n{attack}  --  attack an enemy in an adjacent cell (5 damage; normal enemies have 10 health so two hits clears one, the boss has 50).\n\n{block} (hold)  --  block: takes 25% less melee damage and no ranged damage while held, but you can't attack while blocking.\n\nF11  --  toggle fullscreen, any time.\n\nEscape  --  pause menu (singleplayer only pauses countdowns; in multiplayer it's just your own local menu). Movement, placing a light, attacking, and blocking can all be rebound from the Settings screen.\n\nYou have 100 health. A normal enemy deals 5 damage per hit when adjacent; the boss deals 10 melee or 5 at range. If your health reaches 0 you're defeated and can't act -- in multiplayer you respawn after 10 seconds as long as at least one teammate is still standing; if everyone is defeated at once, only a Reset brings the board back. In singleplayer a defeat needs a Reset too.\n\nIn multiplayer, everyone shares one board and moves independently with their own controls -- your own avatar has a white ring around it so you can tell it apart from your teammates'."
+autowrap_mode = 2
+
+[node name="Spacer2" type="Control" parent="Scroll/Margin/Content"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[connection signal="pressed" from="BackButton" to="." method="_on_back_pressed"]

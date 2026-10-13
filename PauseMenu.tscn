@@ -1,0 +1,339 @@
+[gd_scene load_steps=4 format=3]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_clear"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover"]
+bg_color = Color(1, 1, 1, 0.22)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fallback"]
+bg_color = Color(0.898039, 0.839216, 0.631373, 1)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.376471, 0.223529, 0.156863, 1)
+
+[node name="PauseMenu" type="CanvasLayer"]
+layer = 10
+visible = false
+
+[node name="Dim" type="ColorRect" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0, 0, 0, 0.55)
+
+[node name="MainView" type="Control" parent="Dim"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="MainPanel" type="Control" parent="Dim/MainView"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -120.0
+offset_top = -198.0
+offset_right = 120.0
+offset_bottom = 198.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="MainFallback" type="Panel" parent="Dim/MainView/MainPanel"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_fallback")
+
+[node name="MainArt" type="TextureRect" parent="Dim/MainView/MainPanel"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 0
+
+[node name="MainClose" type="Button" parent="Dim/MainView/MainPanel"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 204.0
+offset_top = 6.0
+offset_right = 231.0
+offset_bottom = 33.0
+focus_mode = 0
+theme_override_colors/font_color = Color(0.24, 0.13, 0.1, 1)
+theme_override_colors/font_hover_color = Color(0.24, 0.13, 0.1, 1)
+theme_override_colors/font_pressed_color = Color(0.24, 0.13, 0.1, 1)
+theme_override_colors/font_hover_pressed_color = Color(0.24, 0.13, 0.1, 1)
+theme_override_styles/normal = SubResource("StyleBoxEmpty_clear")
+theme_override_styles/hover = SubResource("StyleBoxFlat_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_hover")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_hover")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_clear")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_clear")
+
+[node name="TitleLabel" type="Label" parent="Dim/MainView/MainPanel"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 15.0
+offset_right = 240.0
+offset_bottom = 47.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.24, 0.13, 0.1, 1)
+theme_override_font_sizes/font_size = 26
+text = "Paused"
+horizontal_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="Dim/MainView/MainPanel"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 49.0
+offset_right = 222.0
+offset_bottom = 85.0
+custom_minimum_size = Vector2(204.0, 36.0)
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.24, 0.13, 0.1, 1)
+theme_override_font_sizes/font_size = 12
+text = ""
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="CheckButton" type="Button" parent="Dim/MainView/MainPanel" groups=["pause_pixel_button"]]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 36.0
+offset_top = 103.0
+offset_right = 204.0
+offset_bottom = 139.0
+theme_override_font_sizes/font_size = 18
+text = "Check Answer"
+
+[node name="ResetButton" type="Button" parent="Dim/MainView/MainPanel" groups=["pause_pixel_button"]]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 36.0
+offset_top = 154.0
+offset_right = 204.0
+offset_bottom = 190.0
+theme_override_font_sizes/font_size = 18
+text = "Reset"
+
+[node name="ResetNote" type="Label" parent="Dim/MainView/MainPanel"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 36.0
+offset_top = 162.0
+offset_right = 204.0
+offset_bottom = 182.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.24, 0.13, 0.1, 1)
+theme_override_font_sizes/font_size = 12
+text = "(Reset is the host's call)"
+horizontal_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="Dim/MainView/MainPanel" groups=["pause_pixel_button"]]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 36.0
+offset_top = 205.0
+offset_right = 204.0
+offset_bottom = 241.0
+theme_override_font_sizes/font_size = 18
+text = "Resume"
+
+[node name="SettingsButton" type="Button" parent="Dim/MainView/MainPanel" groups=["pause_pixel_button"]]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 36.0
+offset_top = 256.0
+offset_right = 204.0
+offset_bottom = 292.0
+theme_override_font_sizes/font_size = 18
+text = "Settings"
+
+[node name="MainMenuButton" type="Button" parent="Dim/MainView/MainPanel" groups=["pause_pixel_button"]]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 36.0
+offset_top = 307.0
+offset_right = 204.0
+offset_bottom = 343.0
+theme_override_font_sizes/font_size = 18
+text = "Main Menu"
+
+[node name="SettingsView" type="Control" parent="Dim"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+mouse_filter = 2
+
+[node name="SettingsPanel" type="Control" parent="Dim/SettingsView"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -279.0
+offset_top = -210.0
+offset_right = 279.0
+offset_bottom = 210.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="SettingsFallback" type="Panel" parent="Dim/SettingsView/SettingsPanel"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_fallback")
+
+[node name="SettingsArt" type="TextureRect" parent="Dim/SettingsView/SettingsPanel"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 0
+
+[node name="SettingsClose" type="Button" parent="Dim/SettingsView/SettingsPanel"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 522.0
+offset_top = 6.0
+offset_right = 549.0
+offset_bottom = 33.0
+focus_mode = 0
+theme_override_colors/font_color = Color(0.24, 0.13, 0.1, 1)
+theme_override_colors/font_hover_color = Color(0.24, 0.13, 0.1, 1)
+theme_override_colors/font_pressed_color = Color(0.24, 0.13, 0.1, 1)
+theme_override_colors/font_hover_pressed_color = Color(0.24, 0.13, 0.1, 1)
+theme_override_styles/normal = SubResource("StyleBoxEmpty_clear")
+theme_override_styles/hover = SubResource("StyleBoxFlat_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_hover")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_hover")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_clear")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_clear")
+
+[node name="SettingsTitle" type="Label" parent="Dim/SettingsView/SettingsPanel"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 15.0
+offset_right = 558.0
+offset_bottom = 45.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.24, 0.13, 0.1, 1)
+theme_override_font_sizes/font_size = 22
+text = "Settings"
+horizontal_alignment = 1
+
+[node name="LeftColumn" type="VBoxContainer" parent="Dim/SettingsView/SettingsPanel"]
+layout_mode = 0
+offset_left = 27.0
+offset_top = 51.0
+offset_right = 267.0
+offset_bottom = 51.0
+custom_minimum_size = Vector2(240, 0)
+theme_override_constants/separation = 4
+
+[node name="FullscreenButton" type="Button" parent="Dim/SettingsView/SettingsPanel/LeftColumn" groups=["pause_pixel_button"]]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
+theme_override_font_sizes/font_size = 16
+text = "Fullscreen: OFF"
+
+[node name="SizeLabel" type="Label" parent="Dim/SettingsView/SettingsPanel/LeftColumn"]
+layout_mode = 2
+custom_minimum_size = Vector2(0.0, 20.0)
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.24, 0.13, 0.1, 1)
+theme_override_font_sizes/font_size = 12
+text = "Window size:"
+
+[node name="SizeColumn" type="VBoxContainer" parent="Dim/SettingsView/SettingsPanel/LeftColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="RightColumn" type="VBoxContainer" parent="Dim/SettingsView/SettingsPanel"]
+layout_mode = 0
+offset_left = 291.0
+offset_top = 51.0
+offset_right = 531.0
+offset_bottom = 51.0
+custom_minimum_size = Vector2(240, 0)
+theme_override_constants/separation = 4
+
+[node name="ControlsLabel" type="Label" parent="Dim/SettingsView/SettingsPanel/RightColumn"]
+layout_mode = 2
+custom_minimum_size = Vector2(0.0, 20.0)
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.24, 0.13, 0.1, 1)
+theme_override_font_sizes/font_size = 12
+text = "Controls:"
+
+[node name="RebindColumn" type="VBoxContainer" parent="Dim/SettingsView/SettingsPanel/RightColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ResetControlsButton" type="Button" parent="Dim/SettingsView/SettingsPanel/RightColumn" groups=["pause_pixel_button"]]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 34)
+theme_override_font_sizes/font_size = 16
+text = "Reset Controls"
+
+[node name="BackButton" type="Button" parent="Dim/SettingsView/SettingsPanel" groups=["pause_pixel_button"]]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 27.0
+offset_top = 364.0
+offset_right = 127.0
+offset_bottom = 400.0
+theme_override_font_sizes/font_size = 16
+text = "Back"

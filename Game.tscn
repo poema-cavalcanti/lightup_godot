@@ -1,0 +1,46 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Game.gd" id="1"]
+[ext_resource type="PackedScene" path="res://HUD.tscn" id="2"]
+
+[node name="Game" type="Node2D"]
+script = ExtResource("1")
+
+[node name="HUD" parent="." instance=ExtResource("2")]
+
+[node name="GenerationOverlay" type="CanvasLayer" parent="."]
+unique_name_in_owner = true
+layer = 100
+visible = false
+
+[node name="Dim" type="ColorRect" parent="GenerationOverlay"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0, 0, 0, 0.7)
+
+[node name="Center" type="CenterContainer" parent="GenerationOverlay/Dim"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Column" type="VBoxContainer" parent="GenerationOverlay/Dim/Center"]
+layout_mode = 2
+
+[node name="GenerationLabel" type="Label" parent="GenerationOverlay/Dim/Center/Column"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Generating a puzzle..."
+horizontal_alignment = 1
+
+[node name="GenerationCancelButton" type="Button" parent="GenerationOverlay/Dim/Center/Column"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Cancel"

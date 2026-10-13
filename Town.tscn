@@ -1,0 +1,191 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://Town.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/town_background.png" id="2_town"]
+[ext_resource type="Texture2D" path="res://assets/shop_background.png" id="3_shop"]
+[ext_resource type="PackedScene" path="res://InventoryPanel.tscn" id="4_inventory"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_clear"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover"]
+bg_color = Color(1, 1, 1, 0.22)
+
+[node name="Town" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="BackdropLayer" type="CanvasLayer" parent="."]
+layer = -1
+
+[node name="Backdrop" type="ColorRect" parent="BackdropLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.1, 0.1, 0.14, 1)
+
+[node name="Background" type="Sprite2D" parent="."]
+unique_name_in_owner = true
+show_behind_parent = true
+texture = ExtResource("2_town")
+centered = false
+
+[node name="ConfirmDialog" type="CanvasLayer" parent="."]
+unique_name_in_owner = true
+layer = 10
+visible = false
+
+[node name="Dim" type="ColorRect" parent="ConfirmDialog"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0, 0, 0, 0.55)
+
+[node name="Panel" type="ColorRect" parent="ConfirmDialog/Dim"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -80.0
+offset_right = 180.0
+offset_bottom = 80.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.12, 0.12, 0.16, 0.97)
+
+[node name="ConfirmLabel" type="Label" parent="ConfirmDialog/Dim/Panel"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 20.0
+offset_top = 24.0
+offset_right = 340.0
+offset_bottom = 84.0
+custom_minimum_size = Vector2(320, 60)
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="YesButton" type="Button" parent="ConfirmDialog/Dim/Panel"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 40.0
+offset_top = 96.0
+offset_right = 160.0
+offset_bottom = 144.0
+theme_override_font_sizes/font_size = 20
+text = "Yes"
+
+[node name="NoButton" type="Button" parent="ConfirmDialog/Dim/Panel"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 200.0
+offset_top = 96.0
+offset_right = 320.0
+offset_bottom = 144.0
+theme_override_font_sizes/font_size = 20
+text = "No"
+
+[node name="ShopPanel" type="CanvasLayer" parent="."]
+unique_name_in_owner = true
+layer = 10
+visible = false
+
+[node name="ShopDim" type="ColorRect" parent="ShopPanel"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0, 0, 0, 0.55)
+
+[node name="ShopWindow" type="Control" parent="ShopPanel/ShopDim"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -224.0
+offset_right = 320.0
+offset_bottom = 224.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ShopArt" type="TextureRect" parent="ShopPanel/ShopDim/ShopWindow"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_shop")
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 0
+
+[node name="ShopTitleLabel" type="Label" parent="ShopPanel/ShopDim/ShopWindow"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 0.0
+offset_right = 578.0
+offset_bottom = 36.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.1, 0.16, 0.16, 1)
+theme_override_font_sizes/font_size = 22
+vertical_alignment = 1
+
+[node name="ShopCloseButton" type="Button" parent="ShopPanel/ShopDim/ShopWindow"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 598.0
+offset_top = 3.0
+offset_right = 628.0
+offset_bottom = 33.0
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxEmpty_clear")
+theme_override_styles/hover = SubResource("StyleBoxFlat_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_hover")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_hover")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_clear")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_clear")
+
+[node name="ShopGoldLabel" type="Label" parent="ShopPanel/ShopDim/ShopWindow"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 28.0
+offset_top = 48.0
+offset_right = 240.0
+offset_bottom = 76.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.62, 0.38, 0.05, 1)
+theme_override_font_sizes/font_size = 18
+text = "Your gold: 0"
+
+[node name="ShopItems" type="VBoxContainer" parent="ShopPanel/ShopDim/ShopWindow"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 130.0
+offset_top = 88.0
+offset_right = 510.0
+offset_bottom = 88.0
+custom_minimum_size = Vector2(380, 0)
+theme_override_constants/separation = 10
+
+[node name="InventoryPanel" parent="." instance=ExtResource("4_inventory")]
+unique_name_in_owner = true
