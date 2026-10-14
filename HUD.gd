@@ -59,11 +59,12 @@ func setup(game_ref: Node2D, show_admin_buttons: bool) -> void:
 	game.continue_button = _keep_if(continue_button, show_admin_buttons and not is_campaign)
 	game.continue_waiting_label = _keep_if(continue_waiting_label, not show_admin_buttons and not is_campaign)
 
+	# The buttons the HUD shows on its own (Try Again, and the one under the
+	# summary panel) get the green pixel-art look (see PixelButton); if
+	# assets/buttons.png is missing they just keep the default button style.
 	if game.try_again_button != null:
 		try_again_button.pressed.connect(game._on_reset_pressed)
-	# The two buttons that sit under the summary panel get its green pixel-art
-	# look (see PixelButton); if assets/buttons.png is missing they just keep
-	# the default button style.
+		PixelButton.apply(try_again_button)
 	if game.next_level_button != null:
 		next_level_button.pressed.connect(game._on_next_level_pressed)
 		PixelButton.apply(next_level_button)

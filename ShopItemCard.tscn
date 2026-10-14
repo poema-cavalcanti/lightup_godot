@@ -36,7 +36,7 @@ text = "Item"
 layout_mode = 0
 offset_left = 0.0
 offset_top = 40.0
-offset_right = 130.0
+offset_right = 84.0
 offset_bottom = 62.0
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
@@ -45,9 +45,9 @@ text = "0 gold"
 
 [node name="OwnedLabel" type="Label" parent="TextColumn"]
 layout_mode = 0
-offset_left = 134.0
+offset_left = 88.0
 offset_top = 40.0
-offset_right = 200.0
+offset_right = 176.0
 offset_bottom = 60.0
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.7, 0.7, 0.75, 1)
@@ -65,8 +65,8 @@ theme_override_font_sizes/font_size = 14
 
 [node name="BuyButton" type="Button" parent="."]
 layout_mode = 0
-offset_left = 264.0
-offset_top = 25.0
+offset_left = 286.0
+offset_top = 24.0
 offset_right = 364.0
-offset_bottom = 65.0
+offset_bottom = 66.0
 text = "Buy"

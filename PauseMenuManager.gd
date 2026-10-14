@@ -22,7 +22,6 @@ extends RefCounted
 # skin the buttons (PixelButton, with the pack's tan shadow for sitting on
 # parchment), wire button presses, and make the rows that come from data (one
 # button per window-size preset and per key binding, from PauseMenuRowButton.tscn).
-# Missing art falls back to a plain parchment-colored panel and default buttons.
 #
 # The pack's art is tiny, so it's enlarged by PAUSE_PIXEL_SCALE whole pixels.
 # That number only scales the art -- the scene's sizes are written for 3, and
@@ -86,18 +85,9 @@ func _build_pause_menu() -> void:
 	for node: Node in game.get_tree().get_nodes_in_group(PIXEL_BUTTON_GROUP):
 		PixelButton.apply(node as Button, PAUSE_PIXEL_SCALE, PixelButton.PARCHMENT_SHADOW_COLOR)
 
-# Fills one parchment window: builds its art at the size the scene gave the
-# panel and wires its X.
-func _prepare_panel(panel: Control, art_rect: TextureRect, close_button: Button, on_close: Callable) -> void:
-	var design_size: Vector2i = Vector2i(roundi(panel.offset_right - panel.offset_left), roundi(panel.offset_bottom - panel.offset_top))
-	if design_size.x % PAUSE_PIXEL_SCALE != 0 or design_size.y % PAUSE_PIXEL_SCALE != 0:
-		push_warning("PauseMenu.tscn: %s is %s, not a multiple of PAUSE_PIXEL_SCALE (%d) -- the parchment art will be slightly stretched." % [panel.name, design_size, PAUSE_PIXEL_SCALE])
-	art_rect.texture = PixelPanel.build(design_size, PAUSE_PIXEL_SCALE)
-	close_button.pressed.connect(on_close)
-
 func _setup_main_view() -> void:
 	var show_admin_buttons: bool = (not NetworkManager.is_multiplayer) or game.multiplayer.is_server()
-	_prepare_panel(_node("MainPanel"), _node("MainArt"), _node("MainClose"), _close_pause_menu)
+	PixelPanel.setup(_node("MainPanel"), _node("MainArt"), _node("MainClose"), PAUSE_PIXEL_SCALE, _close_pause_menu)
 
 	# game.status_label already carries the "N / M white cells lit" text (set in
 	# GameUIManager._update_status()), on a placeholder label made when the level
@@ -130,7 +120,7 @@ func _setup_settings_view() -> void:
 	# The X here goes back to the pause menu, same as the Back button -- it also
 	# has to drop any half-finished key-rebind capture, which is why it's not
 	# just "close the whole menu".
-	_prepare_panel(_node("SettingsPanel"), _node("SettingsArt"), _node("SettingsClose"), _on_pause_settings_back_pressed)
+	PixelPanel.setup(_node("SettingsPanel"), _node("SettingsArt"), _node("SettingsClose"), PAUSE_PIXEL_SCALE, _on_pause_settings_back_pressed)
 
 	pause_fullscreen_button = _node("FullscreenButton")
 	pause_fullscreen_button.pressed.connect(_on_pause_fullscreen_pressed)

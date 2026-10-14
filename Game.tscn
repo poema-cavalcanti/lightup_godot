@@ -1,29 +1,27 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://2jc8ijqx27pf"]
 
-[ext_resource type="Script" path="res://Game.gd" id="1"]
-[ext_resource type="PackedScene" path="res://HUD.tscn" id="2"]
+[ext_resource type="Script" uid="uid://dofagjn407826" path="res://Game.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://bcib334n5bww3" path="res://HUD.tscn" id="2"]
 
-[node name="Game" type="Node2D"]
+[node name="Game" type="Node2D" unique_id=28722958]
 script = ExtResource("1")
 
-[node name="HUD" parent="." instance=ExtResource("2")]
+[node name="HUD" parent="." unique_id=941514797 instance=ExtResource("2")]
 
-[node name="GenerationOverlay" type="CanvasLayer" parent="."]
+[node name="GenerationOverlay" type="CanvasLayer" parent="." unique_id=663030127]
 unique_name_in_owner = true
 layer = 100
 visible = false
 
-[node name="Dim" type="ColorRect" parent="GenerationOverlay"]
-layout_mode = 3
+[node name="Dim" type="ColorRect" parent="GenerationOverlay" unique_id=39073677]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
 color = Color(0, 0, 0, 0.7)
 
-[node name="Center" type="CenterContainer" parent="GenerationOverlay/Dim"]
+[node name="Center" type="CenterContainer" parent="GenerationOverlay/Dim" unique_id=433454367]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -31,16 +29,16 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Column" type="VBoxContainer" parent="GenerationOverlay/Dim/Center"]
+[node name="Column" type="VBoxContainer" parent="GenerationOverlay/Dim/Center" unique_id=1581441224]
 layout_mode = 2
 
-[node name="GenerationLabel" type="Label" parent="GenerationOverlay/Dim/Center/Column"]
+[node name="GenerationLabel" type="Label" parent="GenerationOverlay/Dim/Center/Column" unique_id=343069623]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Generating a puzzle..."
 horizontal_alignment = 1
 
-[node name="GenerationCancelButton" type="Button" parent="GenerationOverlay/Dim/Center/Column"]
+[node name="GenerationCancelButton" type="Button" parent="GenerationOverlay/Dim/Center/Column" unique_id=992857349]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Cancel"
