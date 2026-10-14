@@ -1,9 +1,10 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://InventoryPanel.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://InventorySlot.tscn" id="2_slot"]
 
 [ext_resource type="Texture2D" path="res://assets/inventory_background.png" id="3_art"]
+[ext_resource type="Texture2D" path="res://assets/gold_icon.png" id="4_gold"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_clear"]
 
@@ -59,12 +60,40 @@ stretch_mode = 0
 layout_mode = 0
 offset_left = 228.0
 offset_top = 0.0
-offset_right = 568.0
+offset_right = 380.0
 offset_bottom = 36.0
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.1, 0.16, 0.16, 1)
 theme_override_font_sizes/font_size = 22
 text = "Inventory"
+vertical_alignment = 1
+
+[node name="GoldRow" type="HBoxContainer" parent="Dim/Frame"]
+layout_mode = 0
+offset_left = 400.0
+offset_top = 0.0
+offset_right = 588.0
+offset_bottom = 36.0
+mouse_filter = 2
+theme_override_constants/separation = 6
+alignment = 2
+
+[node name="GoldIcon" type="TextureRect" parent="Dim/Frame/GoldRow"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("4_gold")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GoldLabel" type="Label" parent="Dim/Frame/GoldRow"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.1, 0.16, 0.16, 1)
+theme_override_font_sizes/font_size = 20
+text = "0"
 vertical_alignment = 1
 
 [node name="CloseButton" type="Button" parent="Dim/Frame"]

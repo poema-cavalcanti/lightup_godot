@@ -26,8 +26,8 @@ extends CanvasLayer
 #
 # LAYOUT: everything fixed lives in the scenes, so it can be moved and
 # restyled in the editor:
-#   InventoryPanel.tscn -- the window (art, title, X, the two slot boxes, the
-#                          scrolling item grid, the hint) over a dimmed backdrop
+#   InventoryPanel.tscn -- the window (art, title, gold count, X, the two slot
+#                          boxes, the scrolling item grid, the hint) over a dimmed backdrop
 #   InventorySlot.tscn  -- one equipment box (icon, click area)
 #   InventoryTile.tscn  -- one item in the grid (icon, badges, gold border)
 # This script only fills them in: it adds a tile per owned item and keeps the
@@ -57,6 +57,7 @@ const SLOT_NAMES: Array[String] = ["armor", "weapon"]
 const SLOT_LABELS: Dictionary = {"armor": "Armor", "weapon": "Weapon"}
 
 @onready var close_button: Button = %CloseButton
+@onready var gold_label: Label = %GoldLabel
 @onready var item_scroll: ScrollContainer = %ItemScroll
 @onready var items_grid: GridContainer = %ItemGrid
 @onready var empty_label: Label = %EmptyLabel
@@ -75,12 +76,14 @@ var can_open: Callable = Callable()
 # the local player's own items and equipment instead (see LoadoutManager.gd):
 #   get_inventory: () -> Dictionary        item_id -> quantity
 #   get_equipped:  (slot: String) -> String
+#   get_gold:      () -> int               the local player's gold
 #   do_equip:      (item_id: String) -> void
 #   do_unequip:    (slot: String) -> void
 # do_equip / do_unequip may complete later (multiplayer asks the host); whoever
 # applies the change then calls refresh().
 var get_inventory: Callable = Callable()
 var get_equipped: Callable = Callable()
+var get_gold: Callable = Callable()
 var do_equip: Callable = Callable()
 var do_unequip: Callable = Callable()
 
@@ -99,6 +102,7 @@ func open() -> void:
 	# Owned items can't change while this is up (purchases happen in a shop
 	# popup the player has to close first), so the grid is rebuilt just once
 	# per open; equipping/unequipping only updates it in place afterwards.
+	gold_label.text = str(_gold())
 	_populate_items()
 	_refresh_equipment()
 	item_scroll.scroll_vertical = 0
@@ -114,6 +118,16 @@ func refresh() -> void:
 
 func _inventory() -> Dictionary:
 	return get_inventory.call() if get_inventory.is_valid() else CampaignManager.inventory
+
+func _gold() -> int:
+	return int(get_gold.call()) if get_gold.is_valid() else CampaignManager.gold
+
+# The gold count in the title bar is re-read every frame while the panel is up:
+# in multiplayer a teammate solving the puzzle pays everyone out while this is
+# open (the local player can't place bulbs with it open, but they can).
+func _process(_delta: float) -> void:
+	if visible:
+		gold_label.text = str(_gold())
 
 func _equipped_in(slot_name: String) -> String:
 	return get_equipped.call(slot_name) if get_equipped.is_valid() else CampaignManager.get_equipped_item_id(slot_name)
