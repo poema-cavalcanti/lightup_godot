@@ -33,6 +33,7 @@ extends Node
 @onready var next_level_button: Button = %NextLevelButton
 @onready var continue_button: Button = %ContinueButton
 @onready var continue_waiting_label: Label = %ContinueWaitingLabel
+@onready var shop_button: Button = %ShopButton
 @onready var try_again_button: Button = %TryAgainButton
 @onready var earnings_panel: Control = %EarningsPanel  # the post-level summary (EarningsPanel.tscn)
 
@@ -43,8 +44,6 @@ var game: Node2D
 # board or generate the next one.
 func setup(game_ref: Node2D, show_admin_buttons: bool) -> void:
 	game = game_ref
-
-	gold_stat.visible = CampaignManager.is_campaign_active  # nothing earns gold outside the campaign
 
 	hamburger_button.pressed.connect(game.pause_mgr._toggle_pause_menu)
 	game.combat_status_label = combat_status_label
@@ -58,6 +57,7 @@ func setup(game_ref: Node2D, show_admin_buttons: bool) -> void:
 	game.next_level_button = _keep_if(next_level_button, show_admin_buttons and is_campaign)
 	game.continue_button = _keep_if(continue_button, show_admin_buttons and not is_campaign)
 	game.continue_waiting_label = _keep_if(continue_waiting_label, not show_admin_buttons and not is_campaign)
+	game.shop_button = _keep_if(shop_button, not is_campaign)  # everyone can shop, host or not
 
 	# The buttons the HUD shows on its own (Try Again, and the one under the
 	# summary panel) get the green pixel-art look (see PixelButton); if
@@ -71,6 +71,9 @@ func setup(game_ref: Node2D, show_admin_buttons: bool) -> void:
 	if game.continue_button != null:
 		continue_button.pressed.connect(game._on_continue_pressed)
 		PixelButton.apply(continue_button)
+	if game.shop_button != null:
+		shop_button.pressed.connect(game.shop_mgr.open_shop)
+		PixelButton.apply(shop_button)
 
 	update_stats()
 
@@ -96,5 +99,13 @@ func update_stats() -> void:
 	health_fill.anchor_right = clamp(float(health) / float(max(1, game.COMBAT_MAX_HEALTH)), 0.0, 1.0)
 	health_label.text = "%d/%d" % [health, game.COMBAT_MAX_HEALTH]
 
-	if gold_stat.visible:
-		gold_label.text = str(CampaignManager.gold)
+	gold_label.text = str(_current_gold())
+
+# The local player's gold: the campaign's single wallet, or -- in Endless and
+# multiplayer -- this player's own entry in Game.player_gold.
+func _current_gold() -> int:
+	if CampaignManager.is_campaign_active:
+		return CampaignManager.gold
+	if game.my_player_index < 0 or game.my_player_index >= game.player_gold.size():
+		return 0
+	return game.player_gold[game.my_player_index]

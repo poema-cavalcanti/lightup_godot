@@ -72,6 +72,17 @@ const SHOP_ITEM_IDS: Dictionary = {
 static func get_item(item_id: String) -> Dictionary:
 	return ITEMS.get(item_id, {})
 
+# Every item any shop sells, each listed once, in shop order. The post-solve shop
+# (Endless / multiplayer) lists these, and the host only accepts purchase requests
+# for them.
+static func all_shop_item_ids() -> Array:
+	var item_ids: Array = []
+	for shop_item_ids: Array in SHOP_ITEM_IDS.values():
+		for item_id: String in shop_item_ids:
+			if not item_ids.has(item_id):
+				item_ids.append(item_id)
+	return item_ids
+
 # Fallback icon per equipment slot, used when an item has no icon art of its
 # own: every armor piece is a hat and every weapon a staff, so these double as
 # "generic hat" / "generic staff". Files under res://assets/.

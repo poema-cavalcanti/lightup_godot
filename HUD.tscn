@@ -361,6 +361,15 @@ visible = false
 layout_mode = 2
 size_flags_horizontal = 4
 
+[node name="ShopButton" type="Button" parent="FrontLayer/FrontRoot/SolveScreen/SolveColumn"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(240, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 20
+text = "Shop"
+
 [node name="NextLevelButton" type="Button" parent="FrontLayer/FrontRoot/SolveScreen/SolveColumn" unique_id=554788837]
 unique_name_in_owner = true
 visible = false
