@@ -67,7 +67,6 @@ const DEFAULT_PUZZLE_ROWS: = [
 	"....#.0...",
 ]
 
-const CELL_SIZE: int = 64
 const MARGIN: int = 24
 const HUD_HEIGHT: int = 110  # reserved top strip: hamburger menu, status icons, minimap
 const GENERATOR_DENSITY: float = 0.22
@@ -93,8 +92,6 @@ const RESPAWN_DURATION: float = 10.0
 const MOVE_ANIMATION_DURATION: float = 0.15
 const LEVEL_TIME_LIMIT: float = 300.0  # 5 minutes
 const LEVEL_TIMER_BONUS_SECONDS: float = 30.0  # extends the boss deadline when a clue is freshly satisfied
-
-enum CellType { WHITE, BLACK }
 
 var rows: int
 var cols: int
@@ -172,10 +169,10 @@ var offset_y: int = 0
 # origin (MARGIN + offset_x/y) and CELL_SIZE plugged in -- see GridGeometry.gd
 # for why the math itself lives there instead of here.
 func _tile_to_pixel(row: float, col: float) -> Vector2:
-	return GridGeometry.tile_to_pixel(row, col, Vector2(MARGIN + offset_x, MARGIN + offset_y), CELL_SIZE)
+	return GridGeometry.tile_to_pixel(row, col, Vector2(MARGIN + offset_x, MARGIN + offset_y), Constants.CELL_SIZE)
 
 func _tile_center_to_pixel(row: float, col: float) -> Vector2:
-	return GridGeometry.tile_center_to_pixel(row, col, Vector2(MARGIN + offset_x, MARGIN + offset_y), CELL_SIZE)
+	return GridGeometry.tile_center_to_pixel(row, col, Vector2(MARGIN + offset_x, MARGIN + offset_y), Constants.CELL_SIZE)
 
 # --- Scrolling viewport: the play area shows a window of the puzzle large --
 # --- enough to fill the screen, centered on the local player, and clamped --
@@ -681,7 +678,7 @@ func _draw_border() -> void:
 
 func _draw_border_tile(piece_name: String, row: int, col: int) -> void:
 	var texture: Texture2D = border_textures[piece_name]
-	var destination: Rect2 = Rect2(_tile_to_pixel(row, col), Vector2(CELL_SIZE, CELL_SIZE))
+	var destination: Rect2 = Rect2(_tile_to_pixel(row, col), Vector2(Constants.CELL_SIZE, Constants.CELL_SIZE))
 	if destination.intersects(get_viewport_rect()):
 		draw_texture_rect(texture, destination, false)
 
@@ -693,10 +690,10 @@ func _draw() -> void:
 	for row in range(view_row_start, view_row_start + view_rows):
 		for col in range(view_col_start, view_col_start + view_cols):
 			var cell_position: Vector2 = _tile_to_pixel(row, col)
-			var cell_rectangle: Rect2 = Rect2(cell_position, Vector2(CELL_SIZE, CELL_SIZE))
+			var cell_rectangle: Rect2 = Rect2(cell_position, Vector2(Constants.CELL_SIZE, Constants.CELL_SIZE))
 			var cell_data: Dictionary = grid[row][col]
 
-			if cell_data["type"] == CellType.BLACK:
+			if cell_data["type"] == Constants.CellType.BLACK:
 				var wall_number: int = cell_data["number"]
 				# Clues 1-4 light up while exactly satisfied; the 0 clue and the
 				# blank wall light up while any bulb has line of sight to them.
@@ -722,7 +719,7 @@ func _draw() -> void:
 					var bulb_tint: Color = Color(1, 1, 1)
 					if conflicting_bulbs.has([row, col]):
 						bulb_tint = Color(1.4, 0.4, 0.4)
-					var bulb_size: float = CELL_SIZE * BULB_SPRITE_SCALE
+					var bulb_size: float = Constants.CELL_SIZE * BULB_SPRITE_SCALE
 					var bulb_rectangle: Rect2 = Rect2(cell_center.x - bulb_size / 2.0, cell_center.y - bulb_size / 2.0, bulb_size, bulb_size)
 					# Offset each cell's start frame by its position so a field of
 					# bulbs flickers out of step instead of in lockstep (stable per

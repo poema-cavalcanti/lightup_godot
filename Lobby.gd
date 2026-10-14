@@ -8,9 +8,8 @@ extends MenuScreen
 
 enum View { CHOICE, HOST_WAITING, JOIN_ENTRY, CLIENT_WAITING }
 
-const MULTIPLAYER_ROWS: int = 10
-const MULTIPLAYER_COLS: int = 10
-const GENERATOR_DENSITY: float = 0.22
+const MULTIPLAYER_ROWS: int = 30
+const MULTIPLAYER_COLS: int = 30
 const DEFAULT_JOIN_ADDRESS: String = "127.0.0.1"
 
 var current_view: View = View.CHOICE
@@ -195,7 +194,7 @@ func _on_connect_pressed() -> void:
 	# view transitions on the connected_ok / connection_failed_signal callbacks above
 
 func _on_start_pressed() -> void:
-	NetworkManager.start_game(MULTIPLAYER_ROWS, MULTIPLAYER_COLS, GENERATOR_DENSITY)
+	NetworkManager.start_game(MULTIPLAYER_ROWS, MULTIPLAYER_COLS, Constants.GENERATOR_DENSITY)
 
 func _on_leave_pressed() -> void:
 	NetworkManager.leave_game()

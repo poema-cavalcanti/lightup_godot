@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://binl6e4aqpe72"]
 
-[ext_resource type="Script" path="res://Cutscene.gd" id="1"]
+[ext_resource type="Script" uid="uid://ccxd8d3rcqg8q" path="res://Cutscene.gd" id="1"]
 
-[node name="Cutscene" type="Control"]
+[node name="Cutscene" type="Control" unique_id=2072935141]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -11,73 +11,82 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
 
-[node name="SceneBackground" type="ColorRect" parent="."]
+[node name="Stage" type="Control" parent="." unique_id=2058803228]
+unique_name_in_owner = true
+clip_contents = true
 layout_mode = 1
-anchors_preset = 10
+anchors_preset = 15
 anchor_right = 1.0
-offset_bottom = 420.0
+anchor_bottom = 1.0
 grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Background" type="ColorRect" parent="Stage" unique_id=592386955]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 color = Color(0.12, 0.1, 0.18, 1)
 
-[node name="SceneImage" type="TextureRect" parent="."]
+[node name="SceneImage" type="TextureRect" parent="Stage" unique_id=1573293465]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 10
+anchors_preset = 15
 anchor_right = 1.0
-offset_bottom = 420.0
+anchor_bottom = 1.0
 grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 expand_mode = 1
+stretch_mode = 6
 
-[node name="SceneTitleLabel" type="Label" parent="."]
+[node name="SceneTitleLabel" type="Label" parent="." unique_id=853233991]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 40.0
 offset_top = 30.0
-offset_right = 640.0
+offset_right = 840.0
 offset_bottom = 74.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
 theme_override_font_sizes/font_size = 30
 text = "Chapter title"
 
-[node name="DialogBackground" type="ColorRect" parent="."]
+[node name="DialogBar" type="ColorRect" parent="." unique_id=1353892613]
 layout_mode = 1
-anchors_preset = 15
+anchors_preset = 12
+anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = 420.0
+offset_left = 40.0
+offset_top = -150.0
+offset_right = -40.0
+offset_bottom = -30.0
 grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.07, 0.07, 0.09, 1)
+grow_vertical = 0
+color = Color(0.07, 0.07, 0.09, 0.9)
 
-[node name="DialogBox" type="ColorRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 30.0
-offset_top = 440.0
-offset_right = -30.0
-offset_bottom = -20.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.14, 0.13, 0.18, 1)
-
-[node name="DialogLabel" type="Label" parent="."]
+[node name="DialogLabel" type="Label" parent="DialogBar" unique_id=1026330896]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 60.0
-offset_top = 464.0
-offset_right = -60.0
-offset_bottom = -56.0
+offset_left = 24.0
+offset_top = 14.0
+offset_right = -24.0
+offset_bottom = -50.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_font_sizes/font_size = 22
 text = "Dialog text appears here."
 autowrap_mode = 2
 
-[node name="ContinueButton" type="Button" parent="."]
+[node name="ContinueButton" type="Button" parent="DialogBar" unique_id=1036204907]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 3
@@ -85,12 +94,12 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -220.0
-offset_top = -64.0
-offset_right = -40.0
-offset_bottom = -20.0
+offset_left = -230.0
+offset_top = -46.0
+offset_right = -16.0
+offset_bottom = -12.0
 grow_horizontal = 0
 grow_vertical = 0
 text = "Continue"
 
-[connection signal="pressed" from="ContinueButton" to="." method="_on_continue_pressed"]
+[connection signal="pressed" from="DialogBar/ContinueButton" to="." method="_on_continue_pressed"]

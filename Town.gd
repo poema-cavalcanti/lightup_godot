@@ -48,25 +48,6 @@ const TOWN_GRID: Array[String] = [
 ]
 const WALL_CHAR: String = "#"
 const DOOR_CHAR: String = "D"
-const TILE_SIZE: float = 64.0 # matches assets/town_background.png exactly (1280x768 = 20x12 tiles)
-
-# --- Mirrors Player.gd's in-level movement constants exactly -- kept in --
-# --- sync by hand; see Player.gd for the reasoning behind each one. -----
-const MOVE_ANIMATION_DURATION: float = 0.15
-const PLAYER_ANIMATION_FRAME_DURATION: float = 0.12
-const PLAYER_IDLE_FRAME_DURATION: float = 0.25
-const PLAYER_SHEET_FRAME_WIDTH: int = 32
-const PLAYER_SHEET_FRAME_HEIGHT: int = 32
-const PLAYER_SHEET_FRAME_COUNT: int = 4
-const PLAYER_IDLE_SHEET_FRAME_COUNT: int = 4
-const PLAYER_RUN_SHEET_FRAME_COUNT: int = 6
-# Mirrors Player.gd's equipped-armor overlay placement tables -- see there for
-# why each sheet kind has its own offset. (No interact/attack here: Town has
-# no combat or bulbs.)
-const OVERLAY_TOP_OFFSET_PIXELS: Dictionary = {"walk": 1, "idle": 2, "run": 2}
-const OVERLAY_BODY_FRAME_COUNTS: Dictionary = {"walk": 4, "idle": 4, "run": 6}
-const PLAYER_SHEET_DIRECTION_ROWS: Dictionary = {"down": 0, "right": 2, "up": 4}
-const PLAYER_TINT: Color = Color(0.15, 0.65, 0.95) # same as P1 in-level (Player.PLAYER_COLORS[0]) -- campaign is always singleplayer
 
 const SHOP_CARD_SCENE: PackedScene = preload("res://ShopItemCard.tscn")
 const CONFIRM_PIXEL_SCALE: int = PixelButton.DEFAULT_PIXEL_SCALE # the confirm popup's panel, buttons and X all use this; its sizes in Town.tscn are multiples of it
@@ -113,7 +94,7 @@ var active_shop_index: int = -1 # which shop the open confirm/shop panel refers 
 func _ready() -> void:
 	grid_rows = TOWN_GRID.size()
 	grid_cols = TOWN_GRID[0].length()
-	SettingsManager.apply_window_size(int(grid_cols * TILE_SIZE), int(grid_rows * TILE_SIZE))
+	SettingsManager.apply_window_size(int(grid_cols * Constants.CELL_SIZE), int(grid_rows * Constants.CELL_SIZE))
 	player_sheet_texture = AssetLoader.load_texture("res://assets/player_sheet.png")
 	player_idle_sheet_texture = AssetLoader.load_texture("res://assets/player_idle_sheet.png")
 	player_run_sheet_texture = AssetLoader.load_texture("res://assets/player_run_sheet.png")
@@ -138,13 +119,13 @@ func _process(delta: float) -> void:
 
 func _advance_animation(delta: float) -> void:
 	if animation_progress < 1.0:
-		animation_progress = min(animation_progress + delta / MOVE_ANIMATION_DURATION, 1.0)
+		animation_progress = min(animation_progress + delta / Constants.MOVE_ANIMATION_DURATION, 1.0)
 		var eased_progress: float = ease(animation_progress, -2.0)
 		visual_position = animation_from.lerp(animation_to, eased_progress)
 
-		var run_frame_count: int = PLAYER_RUN_SHEET_FRAME_COUNT
+		var run_frame_count: int = Constants.PLAYER_RUN_SHEET_FRAME_COUNT
 		animation_timer += delta
-		if animation_timer >= PLAYER_ANIMATION_FRAME_DURATION:
+		if animation_timer >= Constants.PLAYER_ANIMATION_FRAME_DURATION:
 			animation_timer = 0.0
 			animation_frame_index = (animation_frame_index + 1) % run_frame_count
 	else:
@@ -155,9 +136,9 @@ func _advance_animation(delta: float) -> void:
 		# independent of animation_progress above (that one only exists
 		# while a hop is actually playing).
 		idle_timer += delta
-		if idle_timer >= PLAYER_IDLE_FRAME_DURATION:
+		if idle_timer >= Constants.PLAYER_IDLE_FRAME_DURATION:
 			idle_timer = 0.0
-			idle_frame_index = (idle_frame_index + 1) % PLAYER_IDLE_SHEET_FRAME_COUNT
+			idle_frame_index = (idle_frame_index + 1) % Constants.PLAYER_IDLE_SHEET_FRAME_COUNT
 
 func _notification(what: int) -> void:
 	# The window losing OS focus (alt-tab, etc.) can eat the key-up event
@@ -195,7 +176,7 @@ func _handle_move_key_event(keycode: int, is_pressed: bool) -> void:
 func _tick_move_repeat(delta_time: float) -> void:
 	if _is_any_popup_open():
 		return
-	var delta: Array = move_repeater.tick(delta_time, animation_progress < 1.0, MOVE_ANIMATION_DURATION)
+	var delta: Array = move_repeater.tick(delta_time, animation_progress < 1.0, Constants.MOVE_ANIMATION_DURATION)
 	if not delta.is_empty():
 		_try_move(delta[0], delta[1])
 
@@ -255,7 +236,7 @@ func _shop_index_at(row: int, col: int) -> int:
 	return -1
 
 func _leave_town() -> void:
-	get_tree().change_scene_to_file("res://Cutscene.tscn")
+	get_tree().change_scene_to_file(Constants.SCENE_CUTSCENE)
 
 # --- Confirm panel: "Enter the ___ shop? Yes/No" ------------------------
 
@@ -355,8 +336,8 @@ func _on_shop_close_pressed() -> void:
 # the two always agree.
 func _grid_origin() -> Vector2:
 	var viewport_size: Vector2 = get_viewport_rect().size
-	var view_window: Dictionary = GridGeometry.compute_view_window(grid_rows, grid_cols, TILE_SIZE, player_row, player_col, viewport_size.x, viewport_size.y)
-	return Vector2(view_window["extra_x"], view_window["extra_y"]) - Vector2(view_window["view_col_start"], view_window["view_row_start"]) * TILE_SIZE
+	var view_window: Dictionary = GridGeometry.compute_view_window(grid_rows, grid_cols, Constants.CELL_SIZE, player_row, player_col, viewport_size.x, viewport_size.y)
+	return Vector2(view_window["extra_x"], view_window["extra_y"]) - Vector2(view_window["view_col_start"], view_window["view_row_start"]) * Constants.CELL_SIZE
 
 # The town art itself is the Background node; this just draws the player on top
 # (the node is show_behind_parent, so it sits underneath what's drawn here).
@@ -364,7 +345,7 @@ func _draw() -> void:
 	_draw_player(_grid_origin())
 
 func _draw_player(grid_origin: Vector2) -> void:
-	var body_center: Vector2 = GridGeometry.tile_center_to_pixel(visual_position.y, visual_position.x, grid_origin, TILE_SIZE)
+	var body_center: Vector2 = GridGeometry.tile_center_to_pixel(visual_position.y, visual_position.x, grid_origin, Constants.CELL_SIZE)
 
 	var is_moving: bool = animation_progress < 1.0
 	var active_texture: Texture2D
@@ -382,14 +363,14 @@ func _draw_player(grid_origin: Vector2) -> void:
 		overlay_kind = "idle"
 
 	var source_direction: String = "right" if facing_direction == "left" else facing_direction
-	var direction_row: int = PLAYER_SHEET_DIRECTION_ROWS.get(source_direction, 0)
+	var direction_row: int = Constants.PLAYER_SHEET_DIRECTION_ROWS.get(source_direction, 0)
 	var source_rectangle: Rect2 = Rect2(
-		active_frame_index * PLAYER_SHEET_FRAME_WIDTH,
-		direction_row * PLAYER_SHEET_FRAME_HEIGHT,
-		PLAYER_SHEET_FRAME_WIDTH,
-		PLAYER_SHEET_FRAME_HEIGHT
+		active_frame_index * Constants.PLAYER_SHEET_FRAME_WIDTH,
+		direction_row * Constants.PLAYER_SHEET_FRAME_HEIGHT,
+		Constants.PLAYER_SHEET_FRAME_WIDTH,
+		Constants.PLAYER_SHEET_FRAME_HEIGHT
 	)
-	var sprite_size: float = TILE_SIZE * 0.9
+	var sprite_size: float = Constants.CELL_SIZE * 0.9
 	var destination_rectangle: Rect2 = Rect2(
 		body_center.x - sprite_size / 2.0, body_center.y - sprite_size / 2.0,
 		sprite_size, sprite_size
@@ -401,7 +382,7 @@ func _draw_player(grid_origin: Vector2) -> void:
 		# drawn while it's active are relative to body_center.
 		draw_set_transform(body_center, 0.0, Vector2(-1.0, 1.0))
 		destination_rectangle.position -= body_center
-	draw_texture_rect_region(active_texture, destination_rectangle, source_rectangle, PLAYER_TINT)
+	draw_texture_rect_region(active_texture, destination_rectangle, source_rectangle, Constants.PLAYER_COLORS[0])
 	_draw_equipped_armor_overlay(overlay_kind, active_frame_index, destination_rectangle)
 	if flip_horizontally:
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
@@ -420,9 +401,9 @@ func _draw_equipped_armor_overlay(sheet_kind: String, frame_index: int, body_des
 	if overlay_texture == null:
 		return
 
-	var overlay_frame_width: int = PLAYER_SHEET_FRAME_WIDTH
+	var overlay_frame_width: int = Constants.PLAYER_SHEET_FRAME_WIDTH
 	var overlay_frame_count: int = maxi(1, overlay_texture.get_width() / overlay_frame_width)
-	var body_frame_count: int = OVERLAY_BODY_FRAME_COUNTS.get(sheet_kind, overlay_frame_count)
+	var body_frame_count: int = Constants.OVERLAY_BODY_FRAME_COUNTS.get(sheet_kind, overlay_frame_count)
 	var overlay_frame_index: int = frame_index
 	if overlay_frame_count != body_frame_count:
 		overlay_frame_index = int(float(frame_index) * overlay_frame_count / body_frame_count)
@@ -432,8 +413,8 @@ func _draw_equipped_armor_overlay(sheet_kind: String, frame_index: int, body_des
 		overlay_frame_index * overlay_frame_width, 0,
 		overlay_frame_width, overlay_texture.get_height()
 	)
-	var scale_factor: float = body_destination_rectangle.size.x / float(PLAYER_SHEET_FRAME_WIDTH)
-	var top_offset: float = float(OVERLAY_TOP_OFFSET_PIXELS.get(sheet_kind, 0)) * scale_factor
+	var scale_factor: float = body_destination_rectangle.size.x / float(Constants.PLAYER_SHEET_FRAME_WIDTH)
+	var top_offset: float = float(Constants.OVERLAY_TOP_OFFSET_PIXELS.get(sheet_kind, 0)) * scale_factor
 	var overlay_destination_rectangle: Rect2 = Rect2(
 		body_destination_rectangle.position.x,
 		body_destination_rectangle.position.y - top_offset,

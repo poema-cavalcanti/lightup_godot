@@ -27,8 +27,6 @@ const APP_ID: int = 480
 # either from an invite or from "Join Game" in the friends list.
 const LOBBY_TYPE: int = 1
 
-const LOBBY_SCENE: String = "res://Lobby.tscn"
-
 # Steam result / enum values used below (so we don't need `Steam.` constants)
 const RESULT_OK: int = 1
 const ENTER_RESPONSE_SUCCESS: int = 1
@@ -168,4 +166,4 @@ func _request_join(requested_lobby_id: int) -> void:
 		push_warning("Ignoring a Steam join request: already in a multiplayer session.")
 		return
 	pending_join_lobby_id = requested_lobby_id
-	get_tree().change_scene_to_file(LOBBY_SCENE)
+	get_tree().change_scene_to_file(Constants.SCENE_LOBBY)

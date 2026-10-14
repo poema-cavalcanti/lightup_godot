@@ -25,4 +25,4 @@ func _input(event: InputEvent) -> void:
 		SettingsManager.toggle_fullscreen()
 
 func _on_back_pressed() -> void:
-	get_tree().change_scene_to_file("res://MainMenu.tscn")
+	get_tree().change_scene_to_file(Constants.SCENE_MAIN_MENU)

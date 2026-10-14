@@ -24,12 +24,9 @@ extends RefCounted
 # and Solver.gd's constants (WHITE=0, BLACK=1).
 # ---------------------------------------------------------------------------
 
-const WHITE: int = 0
-const BLACK: int = 1
-const MAX_LAYOUT_ATTEMPTS: int = 60
+const MAX_LAYOUT_ATTEMPTS: int = 1000
 const BASE_NODE_BUDGET: int = 200000   # for "does a solution exist" / "is it unique"
 const TRIM_NODE_BUDGET: int = 30000    # smaller budget per clue-removal check (runs many times)
-const NEIGHBOR_OFFSETS: Array = [[-1, 0], [1, 0], [0, -1], [0, 1]]
 
 # Returns {"success": bool, "rows": PackedStringArray}. Capped at
 # MAX_LAYOUT_ATTEMPTS -- fine for callers that can't wait (see GenerationJob
@@ -49,7 +46,7 @@ static func try_generate(rows: int, cols: int, black_density: float, rng: Random
 	var white_count: int = 0
 	for row in range(rows):
 		for col in range(cols):
-			if grid[row][col]["type"] == WHITE:
+			if grid[row][col]["type"] == Constants.CELL_WHITE:
 				white_count += 1
 	if white_count < rows * cols / 2:
 		return PackedStringArray()  # too many black cells to be an interesting puzzle
@@ -81,9 +78,9 @@ static func _random_black_layout(rows: int, cols: int, density: float, rng: Rand
 		var grid_row: Array = []
 		for col in range(cols):
 			if rng.randf() < density:
-				grid_row.append({"type": BLACK, "number": -1})
+				grid_row.append({"type": Constants.CELL_BLACK, "number": -1})
 			else:
-				grid_row.append({"type": WHITE, "number": -1})
+				grid_row.append({"type": Constants.CELL_WHITE, "number": -1})
 		grid.append(grid_row)
 	return grid
 
@@ -100,7 +97,7 @@ static func _is_fully_connected(grid: Array, rows: int, cols: int) -> bool:
 	var start_col: int = -1
 	for row in range(rows):
 		for col in range(cols):
-			if grid[row][col]["type"] == WHITE:
+			if grid[row][col]["type"] == Constants.CELL_WHITE:
 				total_white += 1
 				if start_row == -1:
 					start_row = row
@@ -120,12 +117,12 @@ static func _is_fully_connected(grid: Array, rows: int, cols: int) -> bool:
 	var queue: Array = [[start_row, start_col]]
 	while not queue.is_empty():
 		var current: Array = queue.pop_back()
-		for neighbor_offset: Array in NEIGHBOR_OFFSETS:
+		for neighbor_offset: Array in Constants.GRID_NEIGHBOR_OFFSETS:
 			var next_row: int = current[0] + neighbor_offset[0]
 			var next_col: int = current[1] + neighbor_offset[1]
 			if next_row < 0 or next_row >= rows or next_col < 0 or next_col >= cols:
 				continue
-			if visited[next_row][next_col] or grid[next_row][next_col]["type"] != WHITE:
+			if visited[next_row][next_col] or grid[next_row][next_col]["type"] != Constants.CELL_WHITE:
 				continue
 			visited[next_row][next_col] = true
 			reached += 1
@@ -136,10 +133,10 @@ static func _is_fully_connected(grid: Array, rows: int, cols: int) -> bool:
 static func _assign_all_clues(grid: Array, rows: int, cols: int, solution: Array) -> void:
 	for row in range(rows):
 		for col in range(cols):
-			if grid[row][col]["type"] != BLACK:
+			if grid[row][col]["type"] != Constants.CELL_BLACK:
 				continue
 			var bulb_neighbor_count: int = 0
-			for neighbor_offset: Array in NEIGHBOR_OFFSETS:
+			for neighbor_offset: Array in Constants.GRID_NEIGHBOR_OFFSETS:
 				var next_row: int = row + neighbor_offset[0]
 				var next_col: int = col + neighbor_offset[1]
 				if next_row >= 0 and next_row < rows and next_col >= 0 and next_col < cols and solution[next_row][next_col]:
@@ -150,7 +147,7 @@ static func _trim_clues(grid: Array, rows: int, cols: int, rng: RandomNumberGene
 	var black_cell_positions: Array = []
 	for row in range(rows):
 		for col in range(cols):
-			if grid[row][col]["type"] == BLACK:
+			if grid[row][col]["type"] == Constants.CELL_BLACK:
 				black_cell_positions.append([row, col])
 	black_cell_positions = _shuffled(black_cell_positions, rng)
 
@@ -181,7 +178,7 @@ static func _grid_to_rows(grid: Array, rows: int, cols: int) -> PackedStringArra
 		var row_string: String = ""
 		for col in range(cols):
 			var cell_data: Dictionary = grid[row][col]
-			if cell_data["type"] == WHITE:
+			if cell_data["type"] == Constants.CELL_WHITE:
 				row_string += "."
 			elif cell_data["number"] < 0:
 				row_string += "#"
