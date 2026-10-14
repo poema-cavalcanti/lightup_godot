@@ -120,7 +120,7 @@ func _flash_player_attack(player_index: int) -> void:
 
 @rpc("authority", "call_local", "reliable")
 func _sync_player_attack_flash(player_index: int) -> void:
-	game.players[player_index]["attack_flash_timer"] = ATTACK_FLASH_DURATION
+	game.players[player_index]["attack_flash_timer"] = Constants.ATTACK_FLASH_DURATION
 	game.player_mgr._trigger_action_animation(player_index, "attack")
 
 func _flash_enemy_attack(enemy_id: int) -> void:
@@ -133,7 +133,7 @@ func _flash_enemy_attack(enemy_id: int) -> void:
 func _sync_enemy_attack_flash(enemy_id: int) -> void:
 	for enemy_state: Dictionary in game.enemies:
 		if enemy_state["id"] == enemy_id:
-			enemy_state["attack_flash_timer"] = ATTACK_FLASH_DURATION
+			enemy_state["attack_flash_timer"] = Constants.ATTACK_FLASH_DURATION
 			game.enemy_mgr._trigger_action_animation(enemy_id, "attack")
 			return
 

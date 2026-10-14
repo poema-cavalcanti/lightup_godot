@@ -67,8 +67,8 @@ func _resize_window() -> void:
 	# (user drag, fullscreen, monitor change), call _update_layout()
 	# directly instead -- it must never re-request a size, or it fights
 	# the very resize it is reacting to.
-	var content_width: int = game.MARGIN * 2 + MIN_PLAY_COLS * game.CELL_SIZE
-	var content_height: int = game.HUD_HEIGHT + game.MARGIN * 2 + MIN_PLAY_ROWS * game.CELL_SIZE
+	var content_width: int = game.MARGIN * 2 + MIN_PLAY_COLS * Constants.CELL_SIZE
+	var content_height: int = game.HUD_HEIGHT + game.MARGIN * 2 + MIN_PLAY_ROWS * Constants.CELL_SIZE
 	SettingsManager.apply_window_size(content_width, content_height)
 	_update_layout()
 
@@ -104,7 +104,7 @@ func _update_status() -> void:
 	var white_count: int = 0
 	for row in range(game.rows):
 		for col in range(game.cols):
-			if game.grid[row][col]["type"] == game.CellType.WHITE:
+			if game.grid[row][col]["type"] == Constants.CellType.WHITE:
 				white_count += 1
 				if game.lit[row][col]:
 					lit_count += 1

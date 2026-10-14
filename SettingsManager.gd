@@ -18,7 +18,7 @@ const SIZE_PRESETS: Array[Vector2i] = [
 	Vector2i(1600, 900),
 	Vector2i(1920, 1080),
 ]
-const DEFAULT_WINDOW_SIZE: Vector2i = Vector2i(1280, 720)
+const DEFAULT_WINDOW_SIZE: Vector2i = Vector2i(Constants.DEFAULT_WINDOW_WIDTH, Constants.DEFAULT_WINDOW_HEIGHT)
 
 # Rebindable actions -- movement, placing a light, attacking, and blocking,
 # per the player's own request. Fullscreen (F11) and pause

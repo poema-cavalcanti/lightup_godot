@@ -3,15 +3,7 @@ extends RefCounted
 
 # ---------------------------------------------------------------------------
 # Solves/verifies Light Up puzzles.
-#
-# IMPORTANT: WHITE/BLACK here must stay numerically in sync with Game.gd's
-# `enum CellType { WHITE, BLACK }` (WHITE=0, BLACK=1) since grid cells are
-# passed around as plain {"type": int, "number": int} dictionaries.
 # ---------------------------------------------------------------------------
-
-const WHITE: int = 0
-const BLACK: int = 1
-const NEIGHBOR_OFFSETS: Array = [[-1, 0], [1, 0], [0, -1], [0, 1]]
 
 enum State { UNKNOWN, BULB, EMPTY }
 
@@ -21,8 +13,8 @@ class Result:
 	var solution: Array = []  # first solution found, as a 2D Array[bool]; empty until found
 	var nodes: int = 0
 	var exhausted: bool = false  # true if max_nodes was hit before the search
-	                               # finished -- count/solution are then INCONCLUSIVE,
-	                               # not ground truth, and must be treated as "unknown"
+								   # finished -- count/solution are then INCONCLUSIVE,
+								   # not ground truth, and must be treated as "unknown"
 
 # Finds up to `max_solutions` solutions for the given grid (numbers included).
 # Used two ways:
@@ -38,7 +30,7 @@ static func solve(grid: Array, rows: int, cols: int, max_solutions: int = 2, max
 	for row in range(rows):
 		var state_row: Array = []
 		for col in range(cols):
-			if grid[row][col]["type"] == WHITE:
+			if grid[row][col]["type"] == Constants.CELL_WHITE:
 				state_row.append(State.UNKNOWN)
 			else:
 				state_row.append(State.EMPTY)
@@ -57,7 +49,7 @@ static func verify_answer(grid: Array, rows: int, cols: int, bulbs: Array) -> bo
 	for row in range(rows):
 		var state_row: Array = []
 		for col in range(cols):
-			if grid[row][col]["type"] == BLACK:
+			if grid[row][col]["type"] == Constants.CELL_BLACK:
 				state_row.append(State.EMPTY)
 			elif bulbs[row][col]:
 				state_row.append(State.BULB)
@@ -113,11 +105,11 @@ static func _deep_copy(state: Array) -> Array:
 	return copied_state
 
 static func _is_black(grid: Array, row: int, col: int) -> bool:
-	return grid[row][col]["type"] == BLACK
+	return grid[row][col]["type"] == Constants.CELL_BLACK
 
 static func _white_neighbors(grid: Array, rows: int, cols: int, row: int, col: int) -> Array:
 	var neighbor_positions: Array = []
-	for neighbor_offset: Array in NEIGHBOR_OFFSETS:
+	for neighbor_offset: Array in Constants.GRID_NEIGHBOR_OFFSETS:
 		var next_row: int = row + neighbor_offset[0]
 		var next_col: int = col + neighbor_offset[1]
 		if next_row >= 0 and next_row < rows and next_col >= 0 and next_col < cols and not _is_black(grid, next_row, next_col):
@@ -137,7 +129,7 @@ static func _propagate(grid: Array, rows: int, cols: int, state: Array) -> bool:
 		for row in range(rows):
 			for col in range(cols):
 				var cell_data: Dictionary = grid[row][col]
-				if cell_data["type"] != BLACK or cell_data["number"] < 0:
+				if cell_data["type"] != Constants.CELL_BLACK or cell_data["number"] < 0:
 					continue
 				var neighbor_positions: Array = _white_neighbors(grid, rows, cols, row, col)
 				var known_bulb_count: int = 0
@@ -298,9 +290,9 @@ static func _verify_complete(grid: Array, rows: int, cols: int, state: Array) ->
 	for row in range(rows):
 		for col in range(cols):
 			var cell_data: Dictionary = grid[row][col]
-			if cell_data["type"] == BLACK and cell_data["number"] >= 0:
+			if cell_data["type"] == Constants.CELL_BLACK and cell_data["number"] >= 0:
 				var bulb_neighbor_count: int = 0
-				for neighbor_offset: Array in NEIGHBOR_OFFSETS:
+				for neighbor_offset: Array in Constants.GRID_NEIGHBOR_OFFSETS:
 					var next_row: int = row + neighbor_offset[0]
 					var next_col: int = col + neighbor_offset[1]
 					if next_row >= 0 and next_row < rows and next_col >= 0 and next_col < cols:

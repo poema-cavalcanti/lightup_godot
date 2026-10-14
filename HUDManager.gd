@@ -33,8 +33,8 @@ const MINIMAP_SIZE: float = 150.0
 
 func _compute_view_window() -> void:
 	var viewport_size: Vector2 = game.get_viewport_rect().size
-	var play_width: float = max(game.CELL_SIZE, viewport_size.x - game.MARGIN * 2)
-	var play_height: float = max(game.CELL_SIZE, viewport_size.y - game.HUD_HEIGHT - game.MARGIN)
+	var play_width: float = max(Constants.CELL_SIZE, viewport_size.x - game.MARGIN * 2)
+	var play_height: float = max(Constants.CELL_SIZE, viewport_size.y - game.HUD_HEIGHT - game.MARGIN)
 
 	var focus_row: int = 0
 	var focus_col: int = 0
@@ -51,7 +51,7 @@ func _compute_view_window() -> void:
 	# edge. With no border art border_cells is 0 and this is the plain board.
 	var border_cells: int = game._border_cells()
 	var view_window: Dictionary = GridGeometry.compute_view_window(
-		game.rows + border_cells * 2, game.cols + border_cells * 2, game.CELL_SIZE,
+		game.rows + border_cells * 2, game.cols + border_cells * 2, Constants.CELL_SIZE,
 		focus_row + border_cells, focus_col + border_cells, play_width, play_height)
 	var ext_row_start: int = view_window["view_row_start"]
 	var ext_col_start: int = view_window["view_col_start"]
@@ -73,8 +73,8 @@ func _compute_view_window() -> void:
 
 	# Center the (possibly smaller-than-available) visible area within the
 	# leftover space, rather than pinning it to the play area's top-left.
-	game.offset_x = int(view_window["extra_x"] - (ext_col_start - border_cells) * game.CELL_SIZE)
-	game.offset_y = int(game.HUD_HEIGHT + view_window["extra_y"] - game.MARGIN - (ext_row_start - border_cells) * game.CELL_SIZE)
+	game.offset_x = int(view_window["extra_x"] - (ext_col_start - border_cells) * Constants.CELL_SIZE)
+	game.offset_y = int(game.HUD_HEIGHT + view_window["extra_y"] - game.MARGIN - (ext_row_start - border_cells) * Constants.CELL_SIZE)
 
 # ---------------------------------------------------------------------------
 # Minimap -- the whole puzzle at a glance, top-right of the HUD strip, in
@@ -95,7 +95,7 @@ func _draw_minimap() -> void:
 		for col in range(game.cols):
 			var cell_rect: Rect2 = Rect2(origin + Vector2(col, row) * cell_size, Vector2(cell_size, cell_size))
 			var cell_data: Dictionary = game.grid[row][col]
-			if cell_data["type"] == game.CellType.BLACK:
+			if cell_data["type"] == Constants.CellType.BLACK:
 				game.draw_rect(cell_rect, Color(0.13, 0.13, 0.16))
 				if cell_data["number"] >= 0 and cell_size >= 8.0:
 					game.draw_string(game.font, cell_rect.position + Vector2(cell_size * 0.2, cell_size * 0.8), str(cell_data["number"]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(cell_size * 0.8), Color.WHITE)
@@ -124,7 +124,7 @@ func _play_win_animation() -> void:
 	game.win_animation_time = 0.0
 	game.confetti_pieces.clear()
 
-	var board_width: int = game.view_cols * game.CELL_SIZE
+	var board_width: int = game.view_cols * Constants.CELL_SIZE
 	var view_origin: Vector2 = game._tile_to_pixel(game.view_row_start, game.view_col_start)
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.randomize()
@@ -178,7 +178,7 @@ func _draw_error_flash() -> void:
 		var row: int = cell[0]
 		var col: int = cell[1]
 		var cell_position: Vector2 = game._tile_to_pixel(row, col)
-		game.draw_rect(Rect2(cell_position, Vector2(game.CELL_SIZE, game.CELL_SIZE)), Color(1, 0.15, 0.15, alpha))
+		game.draw_rect(Rect2(cell_position, Vector2(Constants.CELL_SIZE, Constants.CELL_SIZE)), Color(1, 0.15, 0.15, alpha))
 
 func _draw_timer_bonus_popups() -> void:
 	var popup_text: String = "+%ds" % int(game.LEVEL_TIMER_BONUS_SECONDS)
@@ -224,7 +224,7 @@ func _draw_tutorial_hints() -> void:
 	var player_state: Dictionary = game.players[game.my_player_index]
 	var visual_position: Vector2 = player_state["visual_position"]
 	var tile_position: Vector2 = game._tile_to_pixel(visual_position.y, visual_position.x)
-	var anchor_x: float = tile_position.x + game.CELL_SIZE * 0.5
+	var anchor_x: float = tile_position.x + Constants.CELL_SIZE * 0.5
 	var anchor_y: float = tile_position.y
 
 	var hint_font_size: int = 16

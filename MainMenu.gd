@@ -22,34 +22,34 @@ func _ready() -> void:
 	lock_note_label.visible = not endless_mode_unlocked
 
 func _on_settings_pressed() -> void:
-	get_tree().change_scene_to_file("res://Settings.tscn")
+	get_tree().change_scene_to_file(Constants.SCENE_SETTINGS)
 
 func _on_campaign_pressed() -> void:
 	NetworkManager.is_multiplayer = false
 	if not CampaignManager.resume_campaign():
 		CampaignManager.start_campaign()
-	get_tree().change_scene_to_file("res://Cutscene.tscn")
+	get_tree().change_scene_to_file(Constants.SCENE_CUTSCENE)
 
 func _on_new_campaign_pressed() -> void:
 	NetworkManager.is_multiplayer = false
 	CampaignManager.start_campaign()
-	get_tree().change_scene_to_file("res://Cutscene.tscn")
+	get_tree().change_scene_to_file(Constants.SCENE_CUTSCENE)
 
 func _on_endless_mode_pressed() -> void:
 	if not SaveManager.has_completed_campaign:
 		return  # defensive -- the button is disabled in this case anyway
 	NetworkManager.is_multiplayer = false
 	CampaignManager.is_campaign_active = false
-	get_tree().change_scene_to_file("res://Game.tscn")
+	get_tree().change_scene_to_file(Constants.SCENE_GAME)
 
 func _on_multiplayer_pressed() -> void:
-	get_tree().change_scene_to_file("res://Lobby.tscn")
+	get_tree().change_scene_to_file(Constants.SCENE_LOBBY)
 
 func _on_how_to_play_pressed() -> void:
-	get_tree().change_scene_to_file("res://HowToPlay.tscn")
+	get_tree().change_scene_to_file(Constants.SCENE_HOW_TO_PLAY)
 
 func _on_stats_pressed() -> void:
-	get_tree().change_scene_to_file("res://Stats.tscn")
+	get_tree().change_scene_to_file(Constants.SCENE_STATS)
 
 func _on_quit_pressed() -> void:
 	get_tree().quit()

@@ -338,4 +338,4 @@ func _begin_game(puzzle_rows: PackedStringArray, start_positions: Array, peer_or
 	pending_puzzle_rows = puzzle_rows
 	pending_start_positions = start_positions
 	pending_peer_order = peer_order
-	get_tree().change_scene_to_file("res://Game.tscn")
+	get_tree().change_scene_to_file(Constants.SCENE_GAME)

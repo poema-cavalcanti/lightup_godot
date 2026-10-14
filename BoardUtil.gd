@@ -23,7 +23,7 @@ static func find_nearest_white(rows_array: PackedStringArray, row_count: int, co
 	while frontier.size() > 0:
 		var next_frontier: Array = []
 		for frontier_position: Array in frontier:
-			for neighbor_offset: Array in NEIGHBOR_OFFSETS:
+			for neighbor_offset: Array in Constants.GRID_NEIGHBOR_OFFSETS:
 				var next_row: int = frontier_position[0] + neighbor_offset[0]
 				var next_col: int = frontier_position[1] + neighbor_offset[1]
 				if next_row < 0 or next_row >= row_count or next_col < 0 or next_col >= col_count:

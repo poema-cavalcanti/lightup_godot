@@ -23,11 +23,11 @@ func parse_puzzle() -> void:
 		for col in range(game.cols):
 			var cell_character: String = row_string[col]
 			if cell_character == ".":
-				grid_row.append({"type": game.CellType.WHITE, "number": -1})
+				grid_row.append({"type": Constants.CellType.WHITE, "number": -1})
 			elif cell_character == "#":
-				grid_row.append({"type": game.CellType.BLACK, "number": -1})
+				grid_row.append({"type": Constants.CellType.BLACK, "number": -1})
 			else:
-				grid_row.append({"type": game.CellType.BLACK, "number": int(cell_character)})
+				grid_row.append({"type": Constants.CellType.BLACK, "number": int(cell_character)})
 			bulb_row.append(false)
 		game.grid.append(grid_row)
 		game.bulbs.append(bulb_row)
@@ -42,7 +42,7 @@ func _reset_clue_bonus_tracking() -> void:
 		game.clue_bonus_granted.append(bonus_row)
 
 func is_black(row: int, col: int) -> bool:
-	return game.grid[row][col]["type"] == game.CellType.BLACK
+	return game.grid[row][col]["type"] == Constants.CellType.BLACK
 
 # --- Movement: any player, any peer, routed to the host ---------------------
 
@@ -127,7 +127,7 @@ func _check_clue_bonuses() -> void:
 	for row in range(game.rows):
 		for col in range(game.cols):
 			var cell_data: Dictionary = game.grid[row][col]
-			if cell_data["type"] != game.CellType.BLACK:
+			if cell_data["type"] != Constants.CellType.BLACK:
 				continue
 			var clue_number: int = cell_data["number"]
 			if clue_number <= 0:
@@ -148,7 +148,7 @@ func _mark_currently_satisfied_clues_as_granted() -> void:
 	for row in range(game.rows):
 		for col in range(game.cols):
 			var cell_data: Dictionary = game.grid[row][col]
-			if cell_data["type"] != game.CellType.BLACK:
+			if cell_data["type"] != Constants.CellType.BLACK:
 				continue
 			var clue_number: int = cell_data["number"]
 			if clue_number <= 0:
@@ -170,7 +170,7 @@ func _compute_error_cells() -> Array:
 	for row in range(game.rows):
 		for col in range(game.cols):
 			var cell_data: Dictionary = game.grid[row][col]
-			if cell_data["type"] == game.CellType.WHITE:
+			if cell_data["type"] == Constants.CellType.WHITE:
 				if not game.bulbs[row][col] and not game.lit[row][col]:
 					error_cells.append([row, col])
 			elif cell_data["number"] >= 0:

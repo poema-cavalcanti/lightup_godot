@@ -26,7 +26,7 @@ const SPAWN_ANIMATION_DURATION: float = 0.4  # scale/fade-in when an enemy first
 # "frame_time" (loops) or "duration" (one-shot: frames are stretched to fit it,
 # so the gameplay timers below always match the art whatever the frame count).
 # See assets/README.md.
-const ATTACK_ANIMATION_DURATION: float = 0.25  # keep equal to CombatManager.ATTACK_FLASH_DURATION
+const ATTACK_ANIMATION_DURATION: float = Constants.ATTACK_FLASH_DURATION  # keep equal to CombatManager.ATTACK_FLASH_DURATION
 const RANGED_ANIMATION_DURATION: float = 0.3  # boss ranged wind-up/release pose, boss-only
 const HURT_ANIMATION_DURATION: float = 0.25
 const DEATH_ANIMATION_DURATION: float = 0.5  # also how long the corpse blocks re-targeting before it's removed
@@ -144,7 +144,7 @@ func _find_boss_spawn_position() -> Array:
 	var unlit_positions: Array = []
 	for row in range(game.rows):
 		for col in range(game.cols):
-			if game.grid[row][col]["type"] == game.CellType.WHITE and not game.lit[row][col]:
+			if game.grid[row][col]["type"] == Constants.CellType.WHITE and not game.lit[row][col]:
 				unlit_positions.append([row, col])
 	if unlit_positions.is_empty():
 		# shouldn't happen since callers only reach here after
@@ -447,7 +447,7 @@ func _advance_enemy_animations(delta: float) -> bool:
 	for enemy_state: Dictionary in game.enemies:
 		var animation_progress: float = enemy_state["animation_progress"]
 		if animation_progress < 1.0:
-			animation_progress = min(animation_progress + delta / game.MOVE_ANIMATION_DURATION, 1.0)
+			animation_progress = min(animation_progress + delta / Constants.MOVE_ANIMATION_DURATION, 1.0)
 			enemy_state["animation_progress"] = animation_progress
 			var eased_progress: float = ease(animation_progress, -2.0)
 			var from_position: Vector2 = enemy_state["animation_from"]
@@ -515,7 +515,7 @@ func _draw_enemies() -> void:
 		var spawn_eased: float = ease(spawn_progress, -2.0)
 		var spawn_scale: float = lerp(0.25, 1.0, spawn_eased)
 		var spawn_alpha: float = spawn_eased
-		var attack_flash: float = enemy_state["attack_flash_timer"] / game.combat_mgr.ATTACK_FLASH_DURATION
+		var attack_flash: float = enemy_state["attack_flash_timer"] / Constants.ATTACK_FLASH_DURATION
 
 		# Dying shrinks and fades the whole thing out over DEATH_ANIMATION_DURATION,
 		# on top of the death sheet below.
@@ -526,7 +526,7 @@ func _draw_enemies() -> void:
 		var anim_name: String = enemy_state["anim_name"]
 		var active_sheet: Texture2D = _get_sheet(is_boss, anim_name)
 
-		var sprite_size: float = game.CELL_SIZE * (0.85 if is_boss else 0.55) * render_scale
+		var sprite_size: float = Constants.CELL_SIZE * (1.25 if is_boss else 0.75) * render_scale
 		var destination_rectangle: Rect2 = Rect2(
 			body_center.x - sprite_size / 2.0, body_center.y - sprite_size / 2.0,
 			sprite_size, sprite_size
@@ -542,13 +542,13 @@ func _draw_enemies() -> void:
 		game.draw_texture_rect_region(active_sheet, destination_rectangle, source_rectangle, Color(1, 1, 1, render_alpha))
 
 		if attack_flash > 0.0 and not is_dying:
-			var flash_radius: float = game.CELL_SIZE * (0.5 if is_boss else 0.35) * (1.0 + 0.5 * (1.0 - attack_flash))
+			var flash_radius: float = Constants.CELL_SIZE * (0.5 if is_boss else 0.35) * (1.0 + 0.5 * (1.0 - attack_flash))
 			game.draw_arc(body_center, flash_radius, 0.0, TAU, 16, Color(1, 0.9, 0.4, attack_flash), 3.0)
 
 		if not is_dying:
 			var max_health: int = enemy_state["max_health"]
 			var health_fraction: float = float(enemy_state["health"]) / float(max_health)
-			var bar_width: float = game.CELL_SIZE * (0.7 if is_boss else 0.5)
+			var bar_width: float = Constants.CELL_SIZE * (0.7 if is_boss else 0.5)
 			var bar_height: float = 5.0
 			var bar_y_offset: float = -8.0 if is_boss else 4.0
 			var bar_position: Vector2 = Vector2(body_center.x - bar_width / 2.0, top_left.y + bar_y_offset)
@@ -569,6 +569,6 @@ func _spawn_enemy_from_conflict() -> void:
 func _any_unlit_white_cell() -> bool:
 	for row in range(game.rows):
 		for col in range(game.cols):
-			if game.grid[row][col]["type"] == game.CellType.WHITE and not game.lit[row][col]:
+			if game.grid[row][col]["type"] == Constants.CellType.WHITE and not game.lit[row][col]:
 				return true
 	return false

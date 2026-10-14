@@ -7,25 +7,6 @@ var game: Node2D
 func _init(game_ref: Node2D) -> void:
 	game = game_ref
 
-const PLAYER_COLORS: Array[Color] = [
-	Color(0.15, 0.65, 0.95),  # P1 blue
-	Color(0.90, 0.25, 0.55),  # P2 pink
-	Color(0.25, 0.80, 0.35),  # P3 green
-	Color(0.95, 0.60, 0.10),  # P4 orange
-]
-const PLAYER_OFFSETS: Array[Vector2] = [
-	Vector2(-6, -6), Vector2(6, -6), Vector2(-6, 6), Vector2(6, 6),
-]
-const PLAYER_SHEET_FRAME_WIDTH: int = 32
-const PLAYER_SHEET_FRAME_HEIGHT: int = 32
-const PLAYER_SHEET_FRAME_COUNT: int = 4
-const PLAYER_SHEET_DIRECTION_ROWS: Dictionary = {
-	"down": 0, "right": 2, "up": 4,
-	# "left" isn't a row of its own -- the sheet only has one side view
-	# (row 2, "right"); facing left reuses that same row and gets flipped
-	# horizontally at draw time instead (see _draw_players below).
-}
-const PLAYER_ANIMATION_FRAME_DURATION: float = 0.12
 const SPAWN_ANIMATION_DURATION: float = 0.4  # fade/scale-in on first spawn and on respawn
 const MELEE_BLOCK_DAMAGE_MULTIPLIER: float = 0.75  # 25% reduction while blocking; ranged is fully negated
 const OWN_AVATAR_RING_ALPHA: float = 0.55  # the "this one's you" ring, kept translucent so it doesn't overpower the sprite
@@ -34,13 +15,9 @@ const OWN_AVATAR_RING_ALPHA: float = 0.55  # the "this one's you" ring, kept tra
 # --- row layout as the walk sheet above, just with a different column    --
 # --- count each, so they reuse PLAYER_SHEET_DIRECTION_ROWS and the same  --
 # --- left-facing source-rect flip trick.                                 --
-const PLAYER_ATTACK_SHEET_FRAME_COUNT: int = 7
-const PLAYER_INTERACT_SHEET_FRAME_COUNT: int = 4
 const INTERACT_ANIMATION_DURATION: float = 0.3  # one-shot pose played on bulb place/remove
 const BLOCK_LOOP_FRAME_DURATION: float = 0.15  # frame pace of the continuous held-guard pose
-const PLAYER_IDLE_SHEET_FRAME_COUNT: int = 4
-const PLAYER_RUN_SHEET_FRAME_COUNT: int = 6
-const PLAYER_IDLE_FRAME_DURATION: float = 0.25  # slower, restful pace for standing still
+
 
 # Equipped-armor overlay placement (see _draw_equipped_armor_overlay). How
 # many *source* pixels above the body frame's own top edge the overlay art's
@@ -283,9 +260,9 @@ func _advance_player_animations(delta: float) -> bool:
 			player_state["visual_position"] = from_position.lerp(to_position, eased_progress)
 			any_animating = true
 
-			var run_frame_count: int = PLAYER_RUN_SHEET_FRAME_COUNT
+			var run_frame_count: int = Constants.PLAYER_RUN_SHEET_FRAME_COUNT
 			var animation_timer: float = player_state["animation_timer"] + delta
-			if animation_timer >= PLAYER_ANIMATION_FRAME_DURATION:
+			if animation_timer >= Constants.PLAYER_ANIMATION_FRAME_DURATION:
 				animation_timer = 0.0
 				var frame_index: int = player_state["animation_frame_index"]
 				player_state["animation_frame_index"] = (frame_index + 1) % run_frame_count
@@ -298,10 +275,10 @@ func _advance_player_animations(delta: float) -> bool:
 			# as the player stands still, independent of animation_progress
 			# above -- that one only exists while a hop is actually playing.
 			var idle_timer: float = player_state["idle_timer"] + delta
-			if idle_timer >= PLAYER_IDLE_FRAME_DURATION:
+			if idle_timer >= Constants.PLAYER_IDLE_FRAME_DURATION:
 				idle_timer = 0.0
 				var idle_frame_index: int = player_state["idle_frame_index"]
-				player_state["idle_frame_index"] = (idle_frame_index + 1) % PLAYER_IDLE_SHEET_FRAME_COUNT
+				player_state["idle_frame_index"] = (idle_frame_index + 1) % Constants.PLAYER_IDLE_SHEET_FRAME_COUNT
 			player_state["idle_timer"] = idle_timer
 			any_animating = true
 
@@ -318,7 +295,7 @@ func _advance_player_animations(delta: float) -> bool:
 		var action_anim: String = player_state["action_anim"]
 		if action_anim != "":
 			var action_duration: float = game.combat_mgr.ATTACK_FLASH_DURATION if action_anim == "attack" else INTERACT_ANIMATION_DURATION
-			var action_frame_count: int = PLAYER_ATTACK_SHEET_FRAME_COUNT if action_anim == "attack" else PLAYER_INTERACT_SHEET_FRAME_COUNT
+			var action_frame_count: int = Constants.PLAYER_ATTACK_SHEET_FRAME_COUNT if action_anim == "attack" else Constants.PLAYER_INTERACT_SHEET_FRAME_COUNT
 			var action_progress: float = min(player_state["action_progress"] + delta / action_duration, 1.0)
 			player_state["action_progress"] = action_progress
 			player_state["action_frame_index"] = min(int(action_progress * action_frame_count), action_frame_count - 1)
@@ -333,7 +310,7 @@ func _advance_player_animations(delta: float) -> bool:
 			var block_anim_timer: float = player_state["block_anim_timer"] + delta
 			if block_anim_timer >= BLOCK_LOOP_FRAME_DURATION:
 				block_anim_timer = 0.0
-				player_state["block_anim_frame_index"] = (player_state["block_anim_frame_index"] + 1) % PLAYER_INTERACT_SHEET_FRAME_COUNT
+				player_state["block_anim_frame_index"] = (player_state["block_anim_frame_index"] + 1) % Constants.PLAYER_INTERACT_SHEET_FRAME_COUNT
 			player_state["block_anim_timer"] = block_anim_timer
 			any_animating = true
 		else:
@@ -344,7 +321,7 @@ func _advance_player_animations(delta: float) -> bool:
 func _draw_players() -> void:
 	for player_index in range(game.players.size()):
 		var player_state: Dictionary = game.players[player_index]
-		var player_color: Color = PLAYER_COLORS[player_index % PLAYER_COLORS.size()]
+		var player_color: Color = Constants.PLAYER_COLORS[player_index % Constants.PLAYER_COLORS.size()]
 		if player_state["is_defeated"]:
 			player_color = player_color.darkened(0.6)
 			player_color.a = 0.5
@@ -359,17 +336,17 @@ func _draw_players() -> void:
 		if is_blocking:
 			outline_color = outline_color.lerp(Color(0.35, 0.75, 1.0), 0.85)
 		outline_color.a *= spawn_eased
-		var outline_inset: float = (game.CELL_SIZE - 4) * (1.0 - spawn_scale) * 0.5
-		game.draw_rect(Rect2(top_left.x + 2 + outline_inset, top_left.y + 2 + outline_inset, (game.CELL_SIZE - 4) * spawn_scale, (game.CELL_SIZE - 4) * spawn_scale), outline_color, false, 4.0)
+		var outline_inset: float = (Constants.CELL_SIZE - 4) * (1.0 - spawn_scale) * 0.5
+		game.draw_rect(Rect2(top_left.x + 2 + outline_inset, top_left.y + 2 + outline_inset, (Constants.CELL_SIZE - 4) * spawn_scale, (Constants.CELL_SIZE - 4) * spawn_scale), outline_color, false, 4.0)
 
 		var health_fraction: float = float(player_state["health"]) / float(game.COMBAT_MAX_HEALTH)
-		var bar_width: float = game.CELL_SIZE * 0.5
+		var bar_width: float = Constants.CELL_SIZE * 0.5
 		var bar_height: float = 4.0
-		var bar_position: Vector2 = Vector2(top_left.x + game.CELL_SIZE * 0.5 - bar_width / 2.0, top_left.y - 2.0)
+		var bar_position: Vector2 = Vector2(top_left.x + Constants.CELL_SIZE * 0.5 - bar_width / 2.0, top_left.y - 2.0)
 		game.draw_rect(Rect2(bar_position, Vector2(bar_width, bar_height)), Color(0.2, 0.2, 0.2, spawn_eased))
 		game.draw_rect(Rect2(bar_position, Vector2(bar_width * health_fraction, bar_height)), Color(0.3, 0.85, 0.3, spawn_eased))
 
-		var sprite_offset: Vector2 = PLAYER_OFFSETS[player_index % PLAYER_OFFSETS.size()]
+		var sprite_offset: Vector2 = Constants.PLAYER_OFFSETS[player_index % Constants.PLAYER_OFFSETS.size()]
 		var body_center: Vector2 = game._tile_center_to_pixel(visual_position.y, visual_position.x) + sprite_offset
 		# Only meaningful with more than one player sharing the board --
 		# skip the ring entirely in singleplayer, where there's nothing to
@@ -409,15 +386,15 @@ func _draw_players() -> void:
 
 		var facing_direction: String = player_state["facing_direction"]
 		var source_direction: String = "right" if facing_direction == "left" else facing_direction
-		var direction_row: int = PLAYER_SHEET_DIRECTION_ROWS.get(source_direction, 0)
+		var direction_row: int = Constants.PLAYER_SHEET_DIRECTION_ROWS.get(source_direction, 0)
 		var frame_index: int = active_frame_index
 		var source_rectangle: Rect2 = Rect2(
-			frame_index * PLAYER_SHEET_FRAME_WIDTH,
-			direction_row * PLAYER_SHEET_FRAME_HEIGHT,
-			PLAYER_SHEET_FRAME_WIDTH,
-			PLAYER_SHEET_FRAME_HEIGHT
+			frame_index * Constants.PLAYER_SHEET_FRAME_WIDTH,
+			direction_row * Constants.PLAYER_SHEET_FRAME_HEIGHT,
+			Constants.PLAYER_SHEET_FRAME_WIDTH,
+			Constants.PLAYER_SHEET_FRAME_HEIGHT
 		)
-		var sprite_size: float = game.CELL_SIZE * 0.6 * spawn_scale
+		var sprite_size: float = Constants.CELL_SIZE * 0.6 * spawn_scale
 		var destination_rectangle: Rect2 = Rect2(
 			body_center.x - sprite_size / 2.0, body_center.y - sprite_size / 2.0,
 			sprite_size, sprite_size
@@ -442,7 +419,7 @@ func _draw_players() -> void:
 
 		var attack_flash: float = player_state["attack_flash_timer"] / game.combat_mgr.ATTACK_FLASH_DURATION
 		if attack_flash > 0.0:
-			var flash_radius: float = game.CELL_SIZE * 0.32 * (1.0 + 0.5 * (1.0 - attack_flash))
+			var flash_radius: float = Constants.CELL_SIZE * 0.32 * (1.0 + 0.5 * (1.0 - attack_flash))
 			game.draw_arc(body_center, flash_radius, 0.0, TAU, 16, Color(1, 1, 0.6, attack_flash), 3.0)
 
 		# Persistent (not timed) visual cue while guard is up -- a soft
@@ -450,7 +427,7 @@ func _draw_players() -> void:
 		# eating reduced/no damage instead of only finding out afterward.
 		if is_blocking:
 			var pulse: float = 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.006)
-			var shield_radius: float = game.CELL_SIZE * 0.4 * spawn_scale + pulse * 3.0
+			var shield_radius: float = Constants.CELL_SIZE * 0.4 * spawn_scale + pulse * 3.0
 			game.draw_circle(body_center, shield_radius, Color(0.35, 0.75, 1.0, 0.15 * spawn_eased))
 			game.draw_arc(body_center, shield_radius, 0.0, TAU, 24, Color(0.45, 0.85, 1.0, (0.65 + 0.25 * pulse) * spawn_eased), 3.0)
 
@@ -478,7 +455,7 @@ func _draw_equipped_armor_overlay(player_index: int, sheet_kind: String, frame_i
 	# when it differs from the body sheet's (attack's 7 body frames vs the
 	# 6-frame run art it borrows), spread the hat's frames evenly across the
 	# body's instead of indexing past the end of the strip.
-	var overlay_frame_width: int = PLAYER_SHEET_FRAME_WIDTH
+	var overlay_frame_width: int = Constants.PLAYER_SHEET_FRAME_WIDTH
 	var overlay_frame_count: int = maxi(1, overlay_texture.get_width() / overlay_frame_width)
 	var body_frame_count: int = OVERLAY_BODY_FRAME_COUNTS.get(sheet_kind, overlay_frame_count)
 	var overlay_frame_index: int = frame_index
@@ -493,7 +470,7 @@ func _draw_equipped_armor_overlay(player_index: int, sheet_kind: String, frame_i
 	# The art's own (0, 0) pixel lands OVERLAY_TOP_OFFSET_PIXELS[sheet_kind]
 	# source pixels above the body frame's top edge -- scaled by the same
 	# factor the body itself was scaled by.
-	var scale_factor: float = body_destination_rectangle.size.x / float(PLAYER_SHEET_FRAME_WIDTH)
+	var scale_factor: float = body_destination_rectangle.size.x / float(Constants.PLAYER_SHEET_FRAME_WIDTH)
 	var top_offset: float = float(OVERLAY_TOP_OFFSET_PIXELS.get(sheet_kind, 0)) * scale_factor
 	var overlay_destination_rectangle: Rect2 = Rect2(
 		body_destination_rectangle.position.x,

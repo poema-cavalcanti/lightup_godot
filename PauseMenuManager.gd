@@ -208,4 +208,4 @@ func _on_pause_main_menu_pressed() -> void:
 	game._finalize_endless_run()
 	game.pause_menu_open = false
 	NetworkManager.leave_game()
-	game.get_tree().change_scene_to_file("res://MainMenu.tscn")
+	game.get_tree().change_scene_to_file(Constants.SCENE_MAIN_MENU)
