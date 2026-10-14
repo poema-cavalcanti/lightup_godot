@@ -31,3 +31,15 @@ const STATUS_NEUTRAL_COLOR: Color = Color(0.85, 0.85, 0.85)
 const STATUS_SUCCESS_ON_PARCHMENT: Color = Color(0.08, 0.42, 0.14)
 const STATUS_ERROR_ON_PARCHMENT: Color = Color(0.68, 0.12, 0.12)
 const STATUS_NEUTRAL_ON_PARCHMENT: Color = Color(0.24, 0.13, 0.10)  # the parchment panels' dark brown text color
+
+const TITLE_BAR_HEIGHT: float = 36.0  # the green bar, in both pieces of art
+
+# Text colors that read well on the cream parchment / green bar.
+const TEXT_COLOR: Color = Color(0.24, 0.13, 0.10)
+const TITLE_TEXT_COLOR: Color = Color(0.10, 0.16, 0.16)
+const GOLD_TEXT_COLOR: Color = Color(0.62, 0.38, 0.05)
+
+# Palette sampled from the art, used for the no-image fallback.
+const BORDER_COLOR: Color = Color(96.0 / 255.0, 57.0 / 255.0, 40.0 / 255.0)
+const PARCHMENT_COLOR: Color = Color(229.0 / 255.0, 214.0 / 255.0, 161.0 / 255.0)
+const TITLE_BAR_COLOR: Color = Color(80.0 / 255.0, 169.0 / 255.0, 120.0 / 255.0)

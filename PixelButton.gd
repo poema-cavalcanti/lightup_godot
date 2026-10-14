@@ -21,16 +21,19 @@ extends RefCounted
 # always drawn at the art's own pixel size and only the flat green middle
 # stretches, so the button can be any size and the pixels stay crisp.
 #
-# apply() has two optional extras, both used by the pause menu:
-#   - pixel_scale: draw the art enlarged by a whole number (nearest-neighbour),
-#     so the button's pixels match a parchment panel drawn at that scale. The
-#     enlarged copies are built once per setting and shared between buttons.
+# Every button is drawn with the sheet's pixels enlarged by a whole number
+# (nearest-neighbour), so its rounded corners and outline come out as chunky as
+# the sheet's own buttons rather than a hairline: DEFAULT_PIXEL_SCALE (3) for
+# all of them, and the pause menu passes the same number explicitly to match
+# its parchment. The enlarged copies are built once per setting and shared
+# between buttons. apply() also takes:
 #   - shadow_color: swap the sheet's brown drop shadow for another color. The
-#     brown suits the dark screen behind the summary panel; the pack's own menu
+#     brown suits the dark backgrounds behind most buttons; the pack's own menu
 #     art uses a light tan (PARCHMENT_SHADOW_COLOR) for buttons sitting on
-#     parchment.
-# With neither (the defaults), the states are cut straight out of the sheet at
-# 1x -- how the Next Level / Continue button uses it.
+#     parchment, which is what the pause menu asks for.
+#
+# assets/buttons.png is required art -- there is no fallback; a missing file is
+# a load error.
 #
 # To use a different button from the sheet, change the four regions below
 # (x, y, width, height in the sheet's own pixels) and, if its border is
@@ -39,19 +42,27 @@ extends RefCounted
 
 const SHEET_FILE: String = "buttons.png"
 
+# All four cells are the same size. In the sheet a pressed button is drawn one
+# row lower than a raised one and has no drop shadow, so its cell starts with an
+# empty row where the raised button's top edge is -- keeping that row in the
+# crop is what makes a click look like the button sinking.
 const REGION_NORMAL: Rect2 = Rect2(3, 96, 42, 16)
-const REGION_PRESSED: Rect2 = Rect2(51, 97, 42, 15)
+const REGION_PRESSED: Rect2 = Rect2(51, 96, 42, 16)
 const REGION_HOVER: Rect2 = Rect2(99, 96, 42, 16)
-const REGION_HOVER_PRESSED: Rect2 = Rect2(147, 97, 42, 15)
+const REGION_HOVER_PRESSED: Rect2 = Rect2(147, 96, 42, 16)
+
+# The scale (whole screen pixels per art pixel) every button uses unless told otherwise.
+const DEFAULT_PIXEL_SCALE: int = 3
 
 # Pixels of the art kept un-stretched on each side (in art pixels -- multiplied
 # by pixel_scale): the rounded corner, the dark outline, and the highlight/shade
-# line inside it. The bottom is one taller on the non-pressed states, which
-# carry the extra shadow row.
+# line inside it. The pressed top is one taller because it also holds that empty
+# row; the bottom is 4 for both (raised: shade, outline, shadow; pressed: the
+# same without the shadow, one row lower).
 const MARGIN_SIDE: float = 3.0
-const MARGIN_TOP: float = 3.0
-const MARGIN_BOTTOM_RAISED: float = 4.0
-const MARGIN_BOTTOM_PRESSED: float = 3.0
+const MARGIN_TOP_RAISED: float = 3.0
+const MARGIN_TOP_PRESSED: float = 4.0
+const MARGIN_BOTTOM: float = 4.0
 
 # Space kept clear of the label. The raised states leave one art pixel at the
 # bottom for the shadow; the pressed states move it to the top, which is what
@@ -75,7 +86,7 @@ const PARCHMENT_SHADOW_COLOR: Color = Color(205.0 / 255.0, 166.0 / 255.0, 119.0 
 static var _style_cache: Dictionary = {}
 
 # shadow_color with alpha 0 (the default) keeps the sheet's own shadow.
-static func apply(button: Button, pixel_scale: int = 1, shadow_color: Color = Color(0, 0, 0, 0)) -> void:
+static func apply(button: Button, pixel_scale: int = DEFAULT_PIXEL_SCALE, shadow_color: Color = Color(0, 0, 0, 0)) -> void:
 	var cache_key: String = "%d|%s" % [pixel_scale, shadow_color.to_html()]
 	var styles: Dictionary = _style_cache.get(cache_key, {})
 	if styles.is_empty():
@@ -148,8 +159,8 @@ static func _make_style(texture: Texture2D, region: Rect2, is_pressed: bool, pix
 	var scale: float = float(pixel_scale)
 	style.texture_margin_left = MARGIN_SIDE * scale
 	style.texture_margin_right = MARGIN_SIDE * scale
-	style.texture_margin_top = MARGIN_TOP * scale
-	style.texture_margin_bottom = (MARGIN_BOTTOM_PRESSED if is_pressed else MARGIN_BOTTOM_RAISED) * scale
+	style.texture_margin_top = (MARGIN_TOP_PRESSED if is_pressed else MARGIN_TOP_RAISED) * scale
+	style.texture_margin_bottom = MARGIN_BOTTOM * scale
 	style.content_margin_left = TEXT_PADDING_SIDE
 	style.content_margin_right = TEXT_PADDING_SIDE
 	style.content_margin_top = 1.0 * scale if is_pressed else 0.0

@@ -27,12 +27,12 @@ extends CanvasLayer
 # restyled in the editor:
 #   InventoryPanel.tscn -- the window (art, title, X, the two slot boxes, the
 #                          scrolling item grid, the hint) over a dimmed backdrop
-#   InventorySlot.tscn  -- one equipment box (icon, name fallback, click area)
+#   InventorySlot.tscn  -- one equipment box (icon, click area)
 #   InventoryTile.tscn  -- one item in the grid (icon, badges, gold border)
-# This script only fills them in: it loads the parchment art, adds a tile per
-# owned item, and keeps the slots/tiles in step with
-# what's equipped. The art, the slot boxes and the grid area are positioned
-# for assets/inventory_background.png (640x448): its left wing has two
+# This script only fills them in: it adds a tile per owned item and keeps the
+# slots/tiles in step with what's equipped. The art (referenced directly by the
+# scene), the slot boxes and the grid area are positioned for
+# assets/inventory_background.png (640x448): its left wing has two
 # silhouette boxes -- the top one is the "armor" slot (hats), the bottom one
 # the "weapon" slot (staffs), so an equipped item's icon is drawn on top of
 # the silhouette to look worn/held. If the art is redrawn, move ArmorSlot,
@@ -48,7 +48,6 @@ extends CanvasLayer
 # no slot) -- no hover tint, no pointer cursor, no click, tooltip still works.
 # ---------------------------------------------------------------------------
 
-const BACKGROUND_ART: String = "inventory_background.png"
 const TILE_SCENE: PackedScene = preload("res://InventoryTile.tscn")
 
 # The equipment slots, and the readable name each shows in its tooltip. Which
@@ -56,7 +55,6 @@ const TILE_SCENE: PackedScene = preload("res://InventoryTile.tscn")
 const SLOT_NAMES: Array[String] = ["armor", "weapon"]
 const SLOT_LABELS: Dictionary = {"armor": "Armor", "weapon": "Weapon"}
 
-@onready var art_rect: TextureRect = %Art
 @onready var close_button: Button = %CloseButton
 @onready var item_scroll: ScrollContainer = %ItemScroll
 @onready var items_grid: GridContainer = %ItemGrid
@@ -72,8 +70,6 @@ var tiles: Dictionary = {}  # item_id -> its InventoryTile (a Button)
 var can_open: Callable = Callable()
 
 func _ready() -> void:
-	art_rect.texture = AssetLoader.load_texture("res://assets/" + BACKGROUND_ART)
-
 	close_button.pressed.connect(close)
 	for slot_name: String in SLOT_NAMES:
 		var slot_button: Button = _slot_part(slot_name, "ClickButton")
@@ -134,13 +130,8 @@ func _add_tile(item_id: String, quantity: int) -> void:
 	tile.pressed.connect(_on_tile_pressed.bind(item_id))
 	items_grid.add_child(tile)
 
-	var icon_texture: Texture2D = ItemData.get_item_icon(item_id)
 	var icon_rect: TextureRect = tile.get_node("Icon")
-	icon_rect.texture = icon_texture
-	# No icon art for this item: show its name instead of an empty tile.
-	var name_label: Label = tile.get_node("NameLabel")
-	name_label.text = item.get("name", item_id)
-	name_label.visible = icon_texture == null
+	icon_rect.texture = ItemData.get_item_icon(item_id)
 	# Quantity badge -- only when there's more than one.
 	var quantity_label: Label = tile.get_node("QuantityLabel")
 	quantity_label.text = "x%d" % quantity
@@ -155,13 +146,9 @@ func _refresh_equipment() -> void:
 		var item_id: String = CampaignManager.get_equipped_item_id(slot_name)
 		var is_filled: bool = item_id != ""
 		var item: Dictionary = ItemData.get_item(item_id)
-		var icon_texture: Texture2D = ItemData.get_item_icon(item_id) if is_filled else null
 
 		var icon_rect: TextureRect = _slot_part(slot_name, "Icon")
-		icon_rect.texture = icon_texture
-
-		var name_label: Label = _slot_part(slot_name, "NameLabel")
-		name_label.text = item.get("name", item_id) if (is_filled and icon_texture == null) else ""
+		icon_rect.texture = ItemData.get_item_icon(item_id) if is_filled else null
 
 		# An empty slot has nothing to unequip, so its button is disabled.
 		var button: Button = _slot_part(slot_name, "ClickButton")

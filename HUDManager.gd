@@ -103,7 +103,7 @@ func _draw_minimap() -> void:
 				var tint: Color = Color(1, 0.93, 0.55) if game.lit[row][col] else Color(0.9, 0.9, 0.9)
 				game.draw_rect(cell_rect, tint)
 
-	game.draw_rect(Rect2(origin, map_size), Color(0, 0, 0), false, 2.0)
+	game.draw_rect(Rect2(origin, map_size), Color(0.114, 0.11, 0.169, 1.0), false, 2.0)
 
 	var view_rect: Rect2 = Rect2(origin + Vector2(game.view_col_start, game.view_row_start) * cell_size, Vector2(game.view_cols, game.view_rows) * cell_size)
 	game.draw_rect(view_rect, Color(1, 1, 1, 0.9), false, 2.0)

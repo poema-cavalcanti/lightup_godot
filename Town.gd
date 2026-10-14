@@ -48,7 +48,7 @@ const TOWN_GRID: Array[String] = [
 ]
 const WALL_CHAR: String = "#"
 const DOOR_CHAR: String = "D"
-const TILE_SIZE: float = 64.0  # matches assets/town_background.png exactly (1280x768 = 20x12 tiles)
+const TILE_SIZE: float = 64.0 # matches assets/town_background.png exactly (1280x768 = 20x12 tiles)
 
 # --- Mirrors Player.gd's in-level movement constants exactly -- kept in --
 # --- sync by hand; see Player.gd for the reasoning behind each one. -----
@@ -66,11 +66,13 @@ const PLAYER_RUN_SHEET_FRAME_COUNT: int = 6
 const OVERLAY_TOP_OFFSET_PIXELS: Dictionary = {"walk": 1, "idle": 2, "run": 2}
 const OVERLAY_BODY_FRAME_COUNTS: Dictionary = {"walk": 4, "idle": 4, "run": 6}
 const PLAYER_SHEET_DIRECTION_ROWS: Dictionary = {"down": 0, "right": 2, "up": 4}
-const PLAYER_TINT: Color = Color(0.15, 0.65, 0.95)  # same as P1 in-level (Player.PLAYER_COLORS[0]) -- campaign is always singleplayer
+const PLAYER_TINT: Color = Color(0.15, 0.65, 0.95) # same as P1 in-level (Player.PLAYER_COLORS[0]) -- campaign is always singleplayer
 
 const SHOP_CARD_SCENE: PackedScene = preload("res://ShopItemCard.tscn")
-const SHOP_CARD_TEXT_LEFT_WITHOUT_ICON: float = 16.0  # where a card's text starts when the item has no icon (with one it's in the scene)
+const CONFIRM_PIXEL_SCALE: int = PixelButton.DEFAULT_PIXEL_SCALE # the confirm popup's panel, buttons and X all use this; its sizes in Town.tscn are multiples of it
+const SHOP_CARD_TEXT_LEFT_WITHOUT_ICON: float = 16.0 # where a card's text starts when the item has no icon (with one it's in the scene)
 
+var player_sheet_texture: Texture2D
 var player_idle_sheet_texture: Texture2D
 var player_run_sheet_texture: Texture2D
 
@@ -85,7 +87,7 @@ var shops: Array[Dictionary] = [
 var player_row: int = 9
 var player_col: int = 10
 var facing_direction: String = "up"
-var visual_position: Vector2  # tile-space (x=col, y=row), same convention Player.gd uses
+var visual_position: Vector2 # tile-space (x=col, y=row), same convention Player.gd uses
 var animation_from: Vector2
 var animation_to: Vector2
 var animation_progress: float = 1.0
@@ -96,7 +98,7 @@ var idle_frame_index: int = 0
 
 var move_repeater: MoveRepeater = MoveRepeater.new()
 
-var active_shop_index: int = -1  # which shop the open confirm/shop panel refers to
+var active_shop_index: int = -1 # which shop the open confirm/shop panel refers to
 
 # Popups and the town art, all nodes of Town.tscn.
 @onready var background: Sprite2D = %Background
@@ -112,6 +114,7 @@ func _ready() -> void:
 	grid_rows = TOWN_GRID.size()
 	grid_cols = TOWN_GRID[0].length()
 	SettingsManager.apply_window_size(int(grid_cols * TILE_SIZE), int(grid_rows * TILE_SIZE))
+	player_sheet_texture = AssetLoader.load_texture("res://assets/player_sheet.png")
 	player_idle_sheet_texture = AssetLoader.load_texture("res://assets/player_idle_sheet.png")
 	player_run_sheet_texture = AssetLoader.load_texture("res://assets/player_run_sheet.png")
 	visual_position = Vector2(player_col, player_row)
@@ -119,9 +122,12 @@ func _ready() -> void:
 	animation_to = visual_position
 	%YesButton.pressed.connect(_on_confirm_yes_pressed)
 	%NoButton.pressed.connect(_on_confirm_no_pressed)
-	# The shared green button look (see PixelButton); stock buttons if assets/buttons.png is missing.
-	PixelButton.apply(%YesButton)
-	PixelButton.apply(%NoButton)
+	# The confirm popup is the pack's parchment panel (see PixelPanel); its X counts as No.
+	PixelPanel.setup(%ConfirmPanel, %ConfirmArt, %ConfirmClose, CONFIRM_PIXEL_SCALE, _on_confirm_no_pressed)
+	# Yes / No use the shared green button look with the tan shadow made for parchment
+	# (see PixelButton); stock buttons if assets/buttons.png is missing.
+	PixelButton.apply(%YesButton, CONFIRM_PIXEL_SCALE, PixelButton.PARCHMENT_SHADOW_COLOR)
+	PixelButton.apply(%NoButton, CONFIRM_PIXEL_SCALE, PixelButton.PARCHMENT_SHADOW_COLOR)
 	%ShopCloseButton.pressed.connect(_on_shop_close_pressed)
 
 func _process(delta: float) -> void:
@@ -162,7 +168,7 @@ func _notification(what: int) -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and not event.echo and _is_move_keycode(event.keycode):
 		if _is_any_popup_open():
-			return  # movement locked out while a popup is open
+			return # movement locked out while a popup is open
 		_handle_move_key_event(event.keycode, event.pressed)
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -316,7 +322,7 @@ func _add_shop_item_card(item_id: String) -> void:
 
 	var buy_button: Button = card.get_node("BuyButton")
 	buy_button.pressed.connect(_on_buy_item_pressed.bind(item_id, owned_label, status_label))
-	PixelButton.apply(buy_button)  # the shared green button look; default button if assets/buttons.png is missing
+	PixelButton.apply(buy_button) # the shared green button look; default button if assets/buttons.png is missing
 
 func _on_buy_item_pressed(item_id: String, owned_label: Label, status_label: Label) -> void:
 	var item: Dictionary = ItemData.get_item(item_id)
@@ -326,7 +332,7 @@ func _on_buy_item_pressed(item_id: String, owned_label: Label, status_label: Lab
 		status_label.add_theme_color_override("font_color", Constants.STATUS_ERROR_COLOR)
 		return
 	CampaignManager.gold -= cost
-	CampaignManager.add_item(item_id)  # also persists the purchase -- see the comment on add_item()
+	CampaignManager.add_item(item_id) # also persists the purchase -- see the comment on add_item()
 	status_label.text = "Purchased!"
 	status_label.add_theme_color_override("font_color", Constants.STATUS_SUCCESS_COLOR)
 	owned_label.text = "Owned: %d" % CampaignManager.get_item_quantity(item_id)
