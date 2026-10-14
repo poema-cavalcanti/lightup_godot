@@ -49,16 +49,21 @@ func _build_ui() -> void:
 	if not CampaignManager.is_campaign_active:
 		game.shop_mgr.build_panel()
 
-	# Inventory/equipment overlay -- campaign-only (nothing else populates
-	# gold/items), and deliberately its own top-level CanvasLayer rather than
+	# Inventory/equipment overlay -- its own top-level CanvasLayer rather than
 	# part of the HUD: it's meant to work the same way in Town.tscn too (see
-	# Town.tscn), so it carries no dependency on `game` and doesn't pause
-	# anything (see InventoryPanel.gd) -- enemies and the level timer keep
-	# going while it's open, only player input is held off, in Game._input().
-	if CampaignManager.is_campaign_active:
-		game.inventory_panel = preload("res://InventoryPanel.tscn").instantiate()
-		game.inventory_panel.can_open = game.player_mgr._is_local_player_alive  # no opening it while defeated
-		game.add_child(game.inventory_panel)
+	# Town.tscn), and it doesn't pause anything (see InventoryPanel.gd) --
+	# enemies and the level timer keep going while it's open, only player
+	# input is held off, in Game._input(). In the campaign it reads the
+	# CampaignManager globals; in Endless / multiplayer it's pointed at the
+	# local player's own items and equipment (LoadoutManager.gd).
+	game.inventory_panel = preload("res://InventoryPanel.tscn").instantiate()
+	game.inventory_panel.can_open = game.loadout_mgr.can_open_inventory  # not while defeated or shopping
+	if not CampaignManager.is_campaign_active:
+		game.inventory_panel.get_inventory = game.loadout_mgr.my_inventory
+		game.inventory_panel.get_equipped = game.loadout_mgr.my_equipped_item_id
+		game.inventory_panel.do_equip = game.loadout_mgr.equip
+		game.inventory_panel.do_unequip = game.loadout_mgr.unequip
+	game.add_child(game.inventory_panel)
 
 func _resize_window() -> void:
 	# Sets the OS window to fit a sensible minimum play area, then lays

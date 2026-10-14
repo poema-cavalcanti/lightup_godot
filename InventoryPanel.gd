@@ -7,7 +7,8 @@ extends CanvasLayer
 # add it as a child (see GameUIManager._build_ui() and Town.gd/_ready()) --
 # it needs no back-reference to either, since everything it reads and
 # writes (owned items, what's equipped) lives on the CampaignManager
-# autoload.
+# autoload -- unless a host swaps in its own data source (see get_inventory
+# and friends below; Game does that for Endless / multiplayer).
 #
 # Toggled by its own 'I' key listener below, so nothing else needs to wire
 # that up; host scenes only need to check is_open() to know whether to
@@ -69,6 +70,20 @@ var tiles: Dictionary = {}  # item_id -> its InventoryTile (a Button)
 # Town.gd uses the panel. Only guards open(): closing is always allowed.
 var can_open: Callable = Callable()
 
+# Optional data source. Left unset, the panel reads and writes the CampaignManager
+# globals (Campaign and Town). Game sets these for Endless / multiplayer so it shows
+# the local player's own items and equipment instead (see LoadoutManager.gd):
+#   get_inventory: () -> Dictionary        item_id -> quantity
+#   get_equipped:  (slot: String) -> String
+#   do_equip:      (item_id: String) -> void
+#   do_unequip:    (slot: String) -> void
+# do_equip / do_unequip may complete later (multiplayer asks the host); whoever
+# applies the change then calls refresh().
+var get_inventory: Callable = Callable()
+var get_equipped: Callable = Callable()
+var do_equip: Callable = Callable()
+var do_unequip: Callable = Callable()
+
 func _ready() -> void:
 	close_button.pressed.connect(close)
 	for slot_name: String in SLOT_NAMES:
@@ -92,6 +107,29 @@ func open() -> void:
 func close() -> void:
 	visible = false
 
+# Re-reads what's equipped (in place). A no-op while hidden -- open() rebuilds everything.
+func refresh() -> void:
+	if visible:
+		_refresh_equipment()
+
+func _inventory() -> Dictionary:
+	return get_inventory.call() if get_inventory.is_valid() else CampaignManager.inventory
+
+func _equipped_in(slot_name: String) -> String:
+	return get_equipped.call(slot_name) if get_equipped.is_valid() else CampaignManager.get_equipped_item_id(slot_name)
+
+func _equip(item_id: String) -> void:
+	if do_equip.is_valid():
+		do_equip.call(item_id)
+	else:
+		CampaignManager.equip_item(item_id)
+
+func _unequip(slot_name: String) -> void:
+	if do_unequip.is_valid():
+		do_unequip.call(slot_name)
+	else:
+		CampaignManager.unequip_slot(slot_name)
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_I:
 		if visible:
@@ -113,8 +151,9 @@ func _populate_items() -> void:
 		child.queue_free()
 	tiles.clear()
 
-	for item_id: String in CampaignManager.inventory.keys():
-		var quantity: int = CampaignManager.inventory[item_id]
+	var owned: Dictionary = _inventory()
+	for item_id: String in owned.keys():
+		var quantity: int = owned[item_id]
 		if quantity <= 0:
 			continue
 		_add_tile(item_id, quantity)
@@ -143,7 +182,7 @@ func _add_tile(item_id: String, quantity: int) -> void:
 
 func _refresh_equipment() -> void:
 	for slot_name: String in SLOT_NAMES:
-		var item_id: String = CampaignManager.get_equipped_item_id(slot_name)
+		var item_id: String = _equipped_in(slot_name)
 		var is_filled: bool = item_id != ""
 		var item: Dictionary = ItemData.get_item(item_id)
 
@@ -165,7 +204,7 @@ func _update_tile(item_id: String) -> void:
 	var tile: Button = tiles[item_id]
 	var item: Dictionary = ItemData.get_item(item_id)
 	var slot_name: String = _equip_slot_of(item)
-	var is_equipped: bool = slot_name != "" and CampaignManager.get_equipped_item_id(slot_name) == item_id
+	var is_equipped: bool = slot_name != "" and _equipped_in(slot_name) == item_id
 
 	var equipped_border: Control = tile.get_node("EquippedBorder")
 	equipped_border.visible = is_equipped
@@ -197,14 +236,14 @@ func _on_tile_pressed(item_id: String) -> void:
 	var slot_name: String = _equip_slot_of(ItemData.get_item(item_id))
 	if slot_name == "":
 		return
-	if CampaignManager.get_equipped_item_id(slot_name) == item_id:
-		CampaignManager.unequip_slot(slot_name)
+	if _equipped_in(slot_name) == item_id:
+		_unequip(slot_name)
 	else:
-		CampaignManager.equip_item(item_id)
+		_equip(item_id)
 	_refresh_equipment()
 
 func _on_slot_pressed(slot_name: String) -> void:
-	if CampaignManager.get_equipped_item_id(slot_name) == "":
+	if _equipped_in(slot_name) == "":
 		return
-	CampaignManager.unequip_slot(slot_name)
+	_unequip(slot_name)
 	_refresh_equipment()

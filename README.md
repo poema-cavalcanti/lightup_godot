@@ -57,7 +57,7 @@ All of these except F11 and Escape can be rebound in Settings (or the in-game pa
 - **P**: place a bulb at your feet, or pick it back up if one's already there.
 - **Space**: attack an adjacent enemy.
 - **Shift** (hold): block.
-- **I**: open the inventory in the Town.
+- **I**: open the inventory (Town, Endless Mode and multiplayer) to equip or unequip what you've bought.
 - **Escape**: pause menu. In singleplayer it pauses the clock and combat; in multiplayer it's just your own local menu and the game keeps running.
 - **F11**: toggle fullscreen.
 - **Reset** (pause menu, host/singleplayer only): clears all bulbs and walks everyone back to their starting corner.
@@ -77,7 +77,7 @@ Both host and joiners see a live **connected players** list in the lobby. Only t
 
 **The host is authoritative** for all shared state: every player's input is sent to the host, the host validates and applies it, then broadcasts the result back to everyone (itself included) so all boards can never disagree. All combat (enemy spawning, AI, attack resolution, respawns) is simulated only on the host as well. In practice this means non-host players see a small round-trip delay between pressing a key and seeing it happen — normal for this kind of networking model, and unnoticeable on a LAN.
 
-Reset and Continue are host-only (clients see a note instead of the buttons); Check Answer works identically for everyone since the board state is always in sync. Multiplayer gold is session-only and there's no Town access from multiplayer yet.
+Reset and Continue are host-only (clients see a note instead of the buttons); Check Answer works identically for everyone since the board state is always in sync. Endless and multiplayer gold, purchases and equipment are session-only and tracked per player: a level's earnings go to everyone, a purchase only comes off the buyer's gold, and teammates can see each other's equipped armor. There's no Town access from multiplayer yet (buy from the shop button after solving a board).
 
 ### Known limitations (prototype-level, worth hardening later)
 
@@ -129,6 +129,7 @@ The project is organized around a few scenes and a set of single-purpose scripts
 **Data and UI helpers:**
 
 - `CampaignData.gd` — the 10 levels (with their interchangeable puzzle layouts), all cutscene text, and the boss-history → story-branch logic.
+- `ShopManager.gd` / `LoadoutManager.gd` — host-authoritative per-player purchases and equipment for Endless and multiplayer.
 - `ItemData.gd` — the item catalog, shop stock, icons and armor overlay art.
 - `PixelButton.gd` / `PixelPanel.gd` — pixel-art UI skinning.
 

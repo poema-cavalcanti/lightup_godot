@@ -127,8 +127,10 @@ var generating_new_puzzle: bool = false
 # players[i]: those dictionaries are rebuilt from scratch on every Reset, new puzzle and respawn.
 var player_gold: Array[int] = []
 # What each player has bought this session, parallel to player_gold: item_id -> quantity. Same rules (session-only,
-# kept out of players[i]). Equipping these and their effects are not wired up outside the campaign yet.
+# kept out of players[i]).
 var player_inventory: Array[Dictionary] = []
+# What each player has equipped, parallel to the two above: {slot: item_id} (see LoadoutManager.gd).
+var player_equipped: Array[Dictionary] = []
 @onready var gen_overlay: CanvasLayer = %GenerationOverlay  # "Generating a puzzle..." -- a node of Game.tscn
 @onready var gen_overlay_label: Label = %GenerationLabel
 var current_streak: int = 0  # puzzles solved in a row this Endless Mode run
@@ -233,6 +235,7 @@ var enemy_sheets: Dictionary = {}  # "enemy_idle", "boss_tier_1_attack", ... -> 
 var border_textures: Dictionary = {}
 
 const PlayerLogic := preload("res://Player.gd")
+const LoadoutLogic := preload("res://LoadoutManager.gd")
 const EnemyLogic := preload("res://Enemy.gd")
 const CombatLogic := preload("res://CombatManager.gd")
 const UILogic := preload("res://GameUIManager.gd")
@@ -251,6 +254,7 @@ var pause_mgr := PauseMenuLogic.new(self)
 var asset_mgr := AssetLogic.new(self)
 var puzzle_mgr := PuzzleLogic.new(self)
 var shop_mgr := ShopLogic.new(self)
+var loadout_mgr := LoadoutLogic.new(self)
 
 func _ready() -> void:
 	%GenerationCancelButton.pressed.connect(_on_generation_cancel_pressed)
@@ -276,8 +280,10 @@ func _ready() -> void:
 	player_gold.resize(players.size())
 	player_gold.fill(0)
 	player_inventory.clear()
+	player_equipped.clear()
 	for _player_index in range(players.size()):
 		player_inventory.append({})
+		player_equipped.append(LoadoutLogic.empty_loadout())
 
 	puzzle_mgr.parse_puzzle()
 
@@ -482,6 +488,16 @@ func _sync_purchase(player_index: int, item_id: String, new_gold: int, new_quant
 func _purchase_rejected(item_id: String, message: String) -> void:
 	shop_mgr._purchase_rejected(item_id, message)
 
+# Equipping (Endless / multiplayer): logic in LoadoutManager.gd.
+
+@rpc("any_peer", "call_remote", "reliable")
+func _request_equip(player_index: int, slot: String, item_id: String) -> void:
+	loadout_mgr._request_equip(player_index, slot, item_id)
+
+@rpc("authority", "call_local", "reliable")
+func _sync_equipped(player_index: int, slot: String, item_id: String) -> void:
+	loadout_mgr._sync_equipped(player_index, slot, item_id)
+
 # Endless / multiplayer: the summary's Continue button (host / singleplayer
 # only -- see GameUIManager._build_ui). Mirrors Next Level in campaign: the
 # board only advances when the player presses it. Ignored if Reset/an edit
@@ -582,13 +598,14 @@ func _client_ready(_claimed_peer_id: int) -> void:
 		return
 	if not NetworkManager.rate_limit_ok(peer_id, "client_ready", 1.0):
 		return
-	rpc_id(peer_id, "_full_state_sync", bulbs, _players_positions_array(), _players_combat_array(), enemy_mgr._build_enemy_snapshot(), level_timer, boss_spawn_evaluated, current_level_time_limit, player_gold, player_inventory)
+	rpc_id(peer_id, "_full_state_sync", bulbs, _players_positions_array(), _players_combat_array(), enemy_mgr._build_enemy_snapshot(), level_timer, boss_spawn_evaluated, current_level_time_limit, {"gold": player_gold, "inventory": player_inventory, "equipped": player_equipped})
 
 @rpc("authority", "call_remote", "reliable")
-func _full_state_sync(new_bulbs: Array, new_positions: Array, new_combat: Array, enemy_snapshot: Array, new_level_timer: float, new_boss_spawn_evaluated: bool, new_level_time_limit: float, new_player_gold: Array, new_player_inventory: Array) -> void:
+func _full_state_sync(new_bulbs: Array, new_positions: Array, new_combat: Array, enemy_snapshot: Array, new_level_timer: float, new_boss_spawn_evaluated: bool, new_level_time_limit: float, new_economy: Dictionary) -> void:
 	bulbs = new_bulbs
-	player_gold.assign(new_player_gold)
-	player_inventory.assign(new_player_inventory)
+	player_gold.assign(new_economy["gold"])
+	player_inventory.assign(new_economy["inventory"])
+	player_equipped.assign(new_economy["equipped"])
 	for player_index in range(players.size()):
 		var new_position: Array = new_positions[player_index]
 		var combat_entry: Dictionary = new_combat[player_index]
