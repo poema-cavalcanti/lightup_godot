@@ -45,16 +45,27 @@ func _build_ui() -> void:
 	var show_admin_buttons: bool = (not NetworkManager.is_multiplayer) or game.multiplayer.is_server()
 	game.hud.setup(game, show_admin_buttons)
 
-	# Inventory/equipment overlay -- campaign-only (nothing else populates
-	# gold/items), and deliberately its own top-level CanvasLayer rather than
+	# The shop window for Endless (the campaign and multiplayer shop in Town.tscn instead).
+	if not CampaignManager.is_campaign_active and not NetworkManager.is_multiplayer:
+		game.shop_mgr.build_panel()
+
+	# Inventory/equipment overlay -- its own top-level CanvasLayer rather than
 	# part of the HUD: it's meant to work the same way in Town.tscn too (see
-	# Town.tscn), so it carries no dependency on `game` and doesn't pause
-	# anything (see InventoryPanel.gd) -- enemies and the level timer keep
-	# going while it's open, only player input is held off, in Game._input().
-	if CampaignManager.is_campaign_active:
-		game.inventory_panel = preload("res://InventoryPanel.tscn").instantiate()
-		game.inventory_panel.can_open = game.player_mgr._is_local_player_alive  # no opening it while defeated
-		game.add_child(game.inventory_panel)
+	# Town.tscn), and it doesn't pause anything (see InventoryPanel.gd) --
+	# enemies and the level timer keep going while it's open, only player
+	# input is held off, in Game._input(). In the campaign it reads the
+	# CampaignManager globals; in Endless / multiplayer it's pointed at the
+	# local player's own items and equipment (LoadoutManager.gd).
+	game.inventory_panel = preload("res://InventoryPanel.tscn").instantiate()
+	game.inventory_panel.can_open = game.loadout_mgr.can_open_inventory  # not while defeated or shopping
+	if not CampaignManager.is_campaign_active:
+		game.inventory_panel.get_inventory = game.loadout_mgr.my_inventory
+		game.inventory_panel.get_gold = game.loadout_mgr.my_gold
+		game.inventory_panel.get_equipped = game.loadout_mgr.my_equipped_item_id
+		game.inventory_panel.get_gold = game.shop_mgr._my_gold
+		game.inventory_panel.do_equip = game.loadout_mgr.equip
+		game.inventory_panel.do_unequip = game.loadout_mgr.unequip
+	game.add_child(game.inventory_panel)
 
 func _resize_window() -> void:
 	# Sets the OS window to fit a sensible minimum play area, then lays
@@ -127,6 +138,10 @@ func _update_status() -> void:
 	var action_control: Control = _solve_action_control()
 	if action_control != null:
 		action_control.visible = solved_now
+	if game.shop_button != null:
+		game.shop_button.visible = solved_now
+	if not solved_now:
+		game.shop_mgr.close_shop()  # the board was un-solved under an open shop
 	if game.earnings_panel != null:
 		game.earnings_panel.visible = solved_now
 
@@ -145,11 +160,17 @@ func _update_status() -> void:
 
 	if solved_now and not game.was_solved:
 		game.hud_mgr._play_win_animation()
+		# Earnings are paid once per board. Picking a bulb back up and re-placing it
+		# un-solves and re-solves the board, which would otherwise pay out again
+		# (game.earnings_credited is re-armed only when a new puzzle loads).
 		if CampaignManager.is_campaign_active:
-			var remaining_seconds: float = max(0.0, game.current_level_time_limit - game.level_timer)
-			game.level_earnings = CampaignManager.credit_level_earnings(remaining_seconds, game.boss_killed_this_level, game.enemies_killed_this_level)
+			if not game.earnings_credited:
+				game.earnings_credited = true
+				var remaining_seconds: float = max(0.0, game.current_level_time_limit - game.level_timer)
+				game.level_earnings = CampaignManager.credit_level_earnings(remaining_seconds, game.boss_killed_this_level, game.enemies_killed_this_level)
 			game.earnings_panel.populate(game.level_earnings)
-		elif not NetworkManager.is_multiplayer or game.multiplayer.is_server():
+		elif (not NetworkManager.is_multiplayer or game.multiplayer.is_server()) and not game.earnings_credited:
+			game.earnings_credited = true
 			var solve_remaining: float = max(0.0, game.current_level_time_limit - game.level_timer)
 			var solve_breakdown: Dictionary = CampaignManager.calculate_level_earnings(solve_remaining, game.boss_killed_this_level, game.enemies_killed_this_level)
 			if NetworkManager.is_multiplayer:
