@@ -78,8 +78,7 @@ func cleanup() -> void:
 	if NetworkManager.kicked_from_server.is_connected(_on_host_gone):
 		NetworkManager.kicked_from_server.disconnect(_on_host_gone)
 	if job != null:
-		job.cancel()
-		job.finish()
+		job.abandon()  # don't wait for an attempt still in flight (see GenerationJob.abandon)
 		job = null
 
 func _on_host_gone() -> void:

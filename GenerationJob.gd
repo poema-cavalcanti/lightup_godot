@@ -41,6 +41,25 @@ func _run(density: float) -> void:
 func cancel() -> void:
 	cancelled = true
 
+# Cancel and walk away WITHOUT waiting: for scenes that are being closed. An attempt that is
+# still running can take many seconds now (see PuzzleNavigator), and finish() would freeze the
+# game for all of it. The thread is parked here and joined later by reap(), which
+# NetworkManager (an autoload, so it outlives every scene) calls each frame.
+func abandon() -> void:
+	cancelled = true
+	if done or _thread == null:
+		finish()  # nothing running, so this returns at once
+		return
+	_abandoned.append(self)
+
+static var _abandoned: Array[GenerationJob] = []
+
+static func reap() -> void:
+	for index in range(_abandoned.size() - 1, -1, -1):
+		if _abandoned[index].done:
+			_abandoned[index].finish()
+			_abandoned.remove_at(index)
+
 # Joins the thread; blocks only for the tail of an in-flight attempt.
 func finish() -> void:
 	if _thread != null:

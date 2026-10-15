@@ -464,8 +464,7 @@ func _start_pregeneration() -> void:
 
 func _exit_tree() -> void:
 	if next_job != null:
-		next_job.cancel()
-		next_job.finish()
+		next_job.abandon()  # not cancel() + finish(): that would freeze here until the attempt in flight ended
 
 func _on_generation_cancel_pressed() -> void:
 	if next_job != null:

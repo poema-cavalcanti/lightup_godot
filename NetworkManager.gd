@@ -58,6 +58,10 @@ var pending_peer_order: Array = []
 # (TownNet) so it keeps going there. Null otherwise.
 var prepared_job: GenerationJob = null
 
+# Joins background generation threads that scenes abandoned while they were still running.
+func _process(_delta: float) -> void:
+	GenerationJob.reap()
+
 func _ready() -> void:
 	multiplayer.peer_connected.connect(_on_peer_connected)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
