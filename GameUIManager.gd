@@ -60,6 +60,7 @@ func _build_ui() -> void:
 	game.inventory_panel.can_open = game.loadout_mgr.can_open_inventory  # not while defeated or shopping
 	if not CampaignManager.is_campaign_active:
 		game.inventory_panel.get_inventory = game.loadout_mgr.my_inventory
+		game.inventory_panel.get_gold = game.loadout_mgr.my_gold
 		game.inventory_panel.get_equipped = game.loadout_mgr.my_equipped_item_id
 		game.inventory_panel.get_gold = game.shop_mgr._my_gold
 		game.inventory_panel.do_equip = game.loadout_mgr.equip

@@ -58,7 +58,7 @@ All of these except F11 and Escape can be rebound in Settings (or the in-game pa
 - **Space**: attack an adjacent enemy.
 - **Shift** (hold): block.
 - **I**: open the inventory (Town, Endless Mode and multiplayer; in the multiplayer Town the attack key also fights other players) to equip or unequip what you've bought.
-- **Escape**: pause menu. In singleplayer it pauses the clock and combat; in multiplayer it's just your own local menu and the game keeps running.
+- **Escape**: pause menu (also in the Town, where it never pauses anything: it's where you adjust controls and window settings or leave for the Main Menu). In singleplayer it pauses the clock and combat; in multiplayer it's just your own local menu and the game keeps running.
 - **F11**: toggle fullscreen.
 - **Reset** (pause menu, host/singleplayer only): clears all bulbs and walks everyone back to their starting corner.
 - **Check Answer** (pause menu): explicitly verifies the current board against the rules and reports pass/fail (separate from the always-on lit-count status).
@@ -79,7 +79,7 @@ Both host and joiners see a live **connected players** list in the lobby. Only t
 
 Reset and Continue are host-only (clients see a note instead of the buttons); Check Answer works identically for everyone since the board state is always in sync. Endless and multiplayer gold, purchases and equipment are session-only and tracked per player: a level's earnings go to everyone, a purchase only comes off the buyer's gold, and teammates can see each other's equipped armor.
 
-**Multiplayer Town:** after a solved board, the host's **Continue** takes everyone to a shared Town (instead of straight to the next board). Everyone walks it together, and you can shop at either door and use the inventory (**I**). Unlike in the puzzles, players can fight each other here with the attack key; a player who's "killed" just respawns at the spawn tile at full health, with no penalty. Shopping happens only here in multiplayer (Endless Mode keeps its Shop button on the solved screen). Saying **Yes** at a shop door hides you (invisible and impossible to hit) until you close the shop. Walking off the left or right end of the road leaves town, and once every player has left, the next board loads for everyone. (The next puzzle is generated while you're in town.)
+**Multiplayer Town:** after a solved board, the host's **Continue** takes everyone to a shared Town (instead of straight to the next board). Everyone walks it together, and you can shop at either door and use the inventory (**I**). Unlike in the puzzles, players can fight each other here with the attack key; a player who's "killed" just respawns at the spawn tile at full health, with no penalty. Shopping happens only here in multiplayer (Endless Mode keeps its Shop button on the solved screen). Saying **Yes** at a shop door hides you (invisible and impossible to hit) until you close the shop. Walking off the left or right end of the road leaves town (you see a "Waiting..." popup until the others do too), and once every player has left, the next board loads for everyone. The first board of every multiplayer match is always the same fixed one (`Lobby.MULTIPLAYER_STARTING_LEVEL`); the following boards are generated in the background while you play and shop.
 
 ### Known limitations (prototype-level, worth hardening later)
 
@@ -136,7 +136,7 @@ The project is organized around a few scenes and a set of single-purpose scripts
 - `TownNet.gd` — the shared multiplayer Town (synced walking, town fights, shop hiding, leaving together); `SessionEconomy.gd` carries a match's gold and items between a level and the Town.
 - `ItemData.gd` — the item catalog, shop stock, icons and armor overlay art.
 - `PixelButton.gd` / `PixelPanel.gd` — pixel-art UI skinning.
-- `LoadingPopup.tscn` — the "Loading..." window shown to everyone while the host's board is generated (starting a multiplayer match, and leaving the Town if the next board isn't ready yet).
+- `LoadingPopup.tscn` — the "Loading..." / "Waiting..." window (looping dots) used in the multiplayer Town: Waiting once you've left town, Loading if the next board isn't ready when everyone has.
 
 **Other:**
 

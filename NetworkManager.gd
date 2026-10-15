@@ -25,7 +25,6 @@ signal connected_ok
 signal connection_failed_signal
 signal kicked_from_server
 signal steam_host_ready
-signal generation_started  # the host began building the match's first board (everyone shows a loading popup)
 signal steam_host_failed(reason: String)
 signal steam_join_failed(reason: String)
 
@@ -54,6 +53,10 @@ var _last_request_msec: Dictionary = {}
 var pending_puzzle_rows: PackedStringArray = []
 var pending_start_positions: Array = []
 var pending_peer_order: Array = []
+
+# Host only: the next-board generation Game was running when the level ended, handed over to the Town
+# (TownNet) so it keeps going there. Null otherwise.
+var prepared_job: GenerationJob = null
 
 func _ready() -> void:
 	multiplayer.peer_connected.connect(_on_peer_connected)
@@ -311,20 +314,8 @@ func rate_limit_ok(peer_id: int, action: String, min_interval: float) -> bool:
 
 # --- Starting the match ---------------------------------------------------
 
-# Host only, first step of starting: tells every peer (itself included) to put up
-# the loading popup right away. The lobby then builds the board on a worker
-# thread (GenerationJob) and hands it to start_game() when it's ready.
-func begin_generation() -> void:
-	if not is_host:
-		return
-	rpc("_generation_started")
-
-@rpc("authority", "call_local", "reliable")
-func _generation_started() -> void:
-	generation_started.emit()
-
-# Host only. Given the finished board, works out everyone's starting corner
-# and tells every peer (itself included, via call_local) to load Game.tscn.
+# Host only. Given the match's first board (see Lobby.MULTIPLAYER_STARTING_LEVEL), works out
+# everyone's starting corner and tells every peer (itself included, via call_local) to load Game.tscn.
 func start_game(puzzle_rows: PackedStringArray) -> void:
 	if not is_host:
 		return

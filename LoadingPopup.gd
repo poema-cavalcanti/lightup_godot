@@ -1,8 +1,9 @@
 extends CanvasLayer
 
 # ---------------------------------------------------------------------------
-# "Loading..." popup shown while a multiplayer board is being generated (see
-# Lobby.gd and TownNet.gd), so a wait doesn't look like a frozen game. The
+# "Loading..." / "Waiting..." popup for multiplayer waits (see TownNet.gd): Loading
+# while the next board is being generated, Waiting for a player who has left town
+# and is waiting on the others -- so a wait doesn't look like a frozen game. The
 # parchment window is the same PixelPanel art as the pause menu and the
 # Town's shop prompt; the three dots loop (via the label's visible_characters,
 # so the text doesn't shift around as they come and go). Layout is in
@@ -11,7 +12,7 @@ extends CanvasLayer
 # ---------------------------------------------------------------------------
 
 const DOT_INTERVAL: float = 0.4
-const BASE_LENGTH: int = 7  # the characters of "Loading" -- the dots come after
+const DEFAULT_WORD: String = "Loading"  # also "Waiting" (see show_popup); the dots come after it
 const MAX_DOTS: int = 3
 
 @onready var panel: Control = %LoadingPanel
@@ -20,6 +21,7 @@ const MAX_DOTS: int = 3
 
 var dot_timer: float = 0.0
 var dot_count: int = MAX_DOTS
+var word_length: int = DEFAULT_WORD.length()
 
 func _ready() -> void:
 	var design_size: Vector2i = Vector2i(roundi(panel.offset_right - panel.offset_left), roundi(panel.offset_bottom - panel.offset_top))
@@ -27,7 +29,9 @@ func _ready() -> void:
 	label.text = "Loading..."
 	_apply_dots()
 
-func show_popup() -> void:
+func show_popup(word: String = DEFAULT_WORD) -> void:
+	label.text = word + "..."
+	word_length = word.length()
 	dot_timer = 0.0
 	dot_count = 0
 	_apply_dots()
@@ -46,4 +50,4 @@ func _process(delta: float) -> void:
 		_apply_dots()
 
 func _apply_dots() -> void:
-	label.visible_characters = BASE_LENGTH + dot_count
+	label.visible_characters = word_length + dot_count

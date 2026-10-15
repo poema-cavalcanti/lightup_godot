@@ -43,6 +43,14 @@ func equipped_item_id(player_index: int, slot: String) -> String:
 func my_equipped_item_id(slot: String) -> String:
 	return equipped_item_id(game.my_player_index, slot)
 
+# This player's own gold (what the inventory panel's gold count shows).
+func my_gold() -> int:
+	if CampaignManager.is_campaign_active:
+		return CampaignManager.gold
+	if game.my_player_index < 0 or game.my_player_index >= game.player_gold.size():
+		return 0
+	return game.player_gold[game.my_player_index]
+
 func my_inventory() -> Dictionary:
 	if CampaignManager.is_campaign_active:
 		return CampaignManager.inventory

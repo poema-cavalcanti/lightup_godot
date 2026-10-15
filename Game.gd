@@ -521,6 +521,10 @@ func _on_continue_pressed() -> void:
 @rpc("authority", "call_local", "reliable")
 func _go_to_town() -> void:
 	SessionEconomy.store(player_gold, player_inventory, player_equipped)
+	if next_job != null:
+		# The host's background generation carries on in the Town instead of being thrown away (see _exit_tree).
+		NetworkManager.prepared_job = next_job
+		next_job = null
 	get_tree().change_scene_to_file(Constants.SCENE_TOWN)
 
 func _advance_to_new_puzzle() -> void:

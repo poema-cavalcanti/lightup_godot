@@ -64,6 +64,7 @@ const SPAWN_COL: int = 10
 const TownNetLogic := preload("res://TownNet.gd")
 const ShopLogic := preload("res://ShopManager.gd")
 const LoadoutLogic := preload("res://LoadoutManager.gd")
+const PauseMenuLogic := preload("res://PauseMenuManager.gd")
 
 const SHOP_CARD_SCENE: PackedScene = preload("res://ShopItemCard.tscn")
 const CONFIRM_PIXEL_SCALE: int = PixelButton.DEFAULT_PIXEL_SCALE # the confirm popup's panel, buttons and X all use this; its sizes in Town.tscn are multiples of it
@@ -94,6 +95,11 @@ var idle_timer: float = 0.0
 var idle_frame_index: int = 0
 
 var move_repeater: MoveRepeater = MoveRepeater.new()
+
+# The Escape menu is PauseMenuManager's, shared with the levels (it checks `is_town`).
+var is_town: bool = true
+var pause_menu_open: bool = false
+var pause_mgr := PauseMenuLogic.new(self)
 
 var active_shop_index: int = -1 # which shop the open confirm/shop panel refers to
 
@@ -138,6 +144,7 @@ func _ready() -> void:
 	PixelButton.apply(%YesButton, CONFIRM_PIXEL_SCALE, PixelButton.PARCHMENT_SHADOW_COLOR)
 	PixelButton.apply(%NoButton, CONFIRM_PIXEL_SCALE, PixelButton.PARCHMENT_SHADOW_COLOR)
 	%ShopCloseButton.pressed.connect(_on_shop_close_pressed)
+	inventory_panel.can_open = func() -> bool: return not pause_menu_open
 	if NetworkManager.is_multiplayer:
 		_setup_multiplayer()
 
@@ -149,8 +156,9 @@ func _setup_multiplayer() -> void:
 	net.setup()
 	shop_mgr.build_panel()  # the shared shop window replaces this scene's own ShopPanel node
 	shop_mgr.panel.closed.connect(net.on_shop_closed)
-	inventory_panel.can_open = func() -> bool: return not shop_mgr.is_open() and not confirm_canvas.visible
+	inventory_panel.can_open = func() -> bool: return not shop_mgr.is_open() and not confirm_canvas.visible and not pause_menu_open
 	inventory_panel.get_inventory = loadout_mgr.my_inventory
+	inventory_panel.get_gold = loadout_mgr.my_gold
 	inventory_panel.get_equipped = loadout_mgr.my_equipped_item_id
 	inventory_panel.do_equip = loadout_mgr.equip
 	inventory_panel.do_unequip = loadout_mgr.unequip
@@ -198,6 +206,9 @@ func _notification(what: int) -> void:
 		_clear_held_move_keys()
 
 func _input(event: InputEvent) -> void:
+	# A key-rebind capture in the Escape menu's settings gets the first look at every press.
+	if event is InputEventKey and event.pressed and not event.echo and pause_mgr._handle_rebind_key(event):
+		return
 	if event is InputEventKey and not event.echo and _is_move_keycode(event.keycode):
 		if _is_any_popup_open():
 			return # movement locked out while a popup is open
@@ -206,11 +217,29 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_F11:
 			SettingsManager.toggle_fullscreen()
+		elif event.keycode == KEY_ESCAPE:
+			_on_escape_pressed()
 		elif net != null and event.keycode == SettingsManager.get_key_binding("attack") and not _is_any_popup_open():
 			net.request_attack()
 
 func _is_any_popup_open() -> bool:
-	return confirm_canvas.visible or shop_canvas.visible or inventory_panel.is_open() or shop_mgr.is_open()
+	return confirm_canvas.visible or shop_canvas.visible or inventory_panel.is_open() or shop_mgr.is_open() or pause_menu_open
+
+# Escape closes whatever is on top first (the menu, a shop, the shop prompt, the inventory) and
+# otherwise opens the Escape menu. Like in a multiplayer level, nothing pauses -- the menu is local.
+func _on_escape_pressed() -> void:
+	if pause_menu_open:
+		pause_mgr._close_pause_menu()
+	elif shop_mgr.is_open():
+		shop_mgr.close_shop()  # the multiplayer shop; closing it brings the player back out (see TownNet.on_shop_closed)
+	elif shop_canvas.visible:
+		_on_shop_close_pressed()
+	elif confirm_canvas.visible:
+		_on_confirm_no_pressed()
+	elif inventory_panel.is_open():
+		inventory_panel.close()
+	else:
+		pause_mgr._open_pause_menu()
 
 # --- Hold-to-move: a hand-ported match for Player.gd's in-level movement --
 # --- (see Player.gd for the reasoning behind the two-phase repeat, the ----

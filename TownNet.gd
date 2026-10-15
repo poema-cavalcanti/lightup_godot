@@ -40,7 +40,6 @@ var town: Node2D
 var pending_timer: float = 0.0
 var job: GenerationJob = null
 var transitioning: bool = false
-var waiting_label: Label = null
 var loading_popup: CanvasLayer = null
 
 func _init(town_ref: Node2D) -> void:
@@ -54,29 +53,22 @@ func setup() -> void:
 	for _player_index in range(peer_order.size()):
 		town.players.append(_new_state())
 
-	var layer: CanvasLayer = CanvasLayer.new()
-	layer.layer = 20
-	waiting_label = Label.new()
-	waiting_label.visible = false
-	waiting_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	waiting_label.position.y = 24.0
-	waiting_label.add_theme_color_override("font_color", Constants.STATUS_NEUTRAL_COLOR)
-	waiting_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	waiting_label.add_theme_constant_override("outline_size", 6)
-	layer.add_child(waiting_label)
-	town.add_child(layer)
 	loading_popup = preload("res://LoadingPopup.tscn").instantiate()
 	town.add_child(loading_popup)
 
 	town.multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 	NetworkManager.kicked_from_server.connect(_on_host_gone)
 	if town.multiplayer.is_server():
-		# The next board is built while everyone shops and brawls.
-		var sizes: Array[Vector2i] = preload("res://Game.gd").SUBSEQUENT_PUZZLE_SIZES
-		var rng: RandomNumberGenerator = RandomNumberGenerator.new()
-		rng.randomize()
-		job = GenerationJob.new()
-		job.start(sizes[rng.randi() % sizes.size()], Constants.GENERATOR_DENSITY)
+		# The next board is built while everyone shops and brawls -- normally the one
+		# the level's own background generation was already working on (Game._go_to_town).
+		job = NetworkManager.prepared_job
+		NetworkManager.prepared_job = null
+		if job == null:
+			var sizes: Array[Vector2i] = preload("res://Game.gd").SUBSEQUENT_PUZZLE_SIZES
+			var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+			rng.randomize()
+			job = GenerationJob.new()
+			job.start(sizes[rng.randi() % sizes.size()], Constants.GENERATOR_DENSITY)
 	else:
 		town.rpc_id(1, "_town_ready")
 
@@ -339,8 +331,7 @@ func _sync_departed(player_index: int) -> void:
 	state["hidden"] = true
 	if player_index == town.my_player_index:
 		pending_timer = 0.0
-		waiting_label.text = "Waiting for the other players to leave town..."
-		waiting_label.visible = true
+		loading_popup.show_popup("Waiting")
 	if _is_host():
 		_check_everyone_left()
 
@@ -377,8 +368,7 @@ func _start_next_level() -> void:
 
 # Every peer: the host is still building the next board.
 func _sync_loading() -> void:
-	waiting_label.visible = false
-	loading_popup.show_popup()
+	loading_popup.show_popup("Loading")
 
 # --- Late loaders ------------------------------------------------------------------
 
@@ -418,8 +408,7 @@ func _full_sync(snapshot: Array) -> void:
 		town.player_row = me["row"]
 		town.player_col = me["col"]
 		if me["departed"]:
-			waiting_label.text = "Waiting for the other players to leave town..."
-			waiting_label.visible = true
+			loading_popup.show_popup("Waiting")
 
 # --- Drawing -----------------------------------------------------------------------
 

@@ -33,6 +33,14 @@ const ROW_BUTTON_SCENE: PackedScene = preload("res://PauseMenuRowButton.tscn")
 const PAUSE_PIXEL_SCALE: int = 3
 const PIXEL_BUTTON_GROUP: String = "pause_pixel_button"  # buttons in PauseMenu.tscn / the row scene that get the pixel skin
 
+const TOWN_PAUSE_LAYER: int = 110  # above the Town's "Loading/Waiting" popup (layer 100), so the menu stays usable while waiting
+
+# The Town (Town.gd) uses this same menu -- the controls/window settings and the way out to the Main
+# Menu -- with the level-only parts (status, Check Answer, Reset) left out. It marks itself with
+# an `is_town` field; Game has none.
+func _in_town() -> bool:
+	return game.get("is_town") == true
+
 var game: Node2D
 
 func _init(game_ref: Node2D) -> void:
@@ -56,7 +64,10 @@ func _open_pause_menu() -> void:
 	if pause_canvas == null:
 		_build_pause_menu()
 	game.pause_menu_open = true
-	game.player_mgr._clear_held_move_keys()
+	if _in_town():
+		game.move_repeater.clear()
+	else:
+		game.player_mgr._clear_held_move_keys()
 	pause_menu_view.visible = true
 	pause_settings_view.visible = false
 	pause_canvas.visible = true
@@ -73,6 +84,8 @@ func _node(node_name: String) -> Node:
 
 func _build_pause_menu() -> void:
 	pause_canvas = PAUSE_MENU_SCENE.instantiate() as CanvasLayer  # hidden until _open_pause_menu()
+	if _in_town():
+		pause_canvas.layer = TOWN_PAUSE_LAYER
 	game.add_child(pause_canvas)
 	pause_menu_view = _node("MainView")
 	pause_settings_view = _node("SettingsView")
@@ -87,7 +100,14 @@ func _build_pause_menu() -> void:
 
 func _setup_main_view() -> void:
 	var show_admin_buttons: bool = (not NetworkManager.is_multiplayer) or game.multiplayer.is_server()
+	if _in_town():
+		_arrange_main_view_for_town()
 	PixelPanel.setup(_node("MainPanel"), _node("MainArt"), _node("MainClose"), PAUSE_PIXEL_SCALE, _close_pause_menu)
+	if _in_town():
+		_node("ResumeButton").pressed.connect(_close_pause_menu)
+		_node("SettingsButton").pressed.connect(_on_pause_settings_pressed)
+		_node("MainMenuButton").pressed.connect(_on_pause_main_menu_pressed)
+		return
 
 	# game.status_label already carries the "N / M white cells lit" text (set in
 	# GameUIManager._update_status()), on a placeholder label made when the level
@@ -115,6 +135,20 @@ func _setup_main_view() -> void:
 	_node("ResumeButton").pressed.connect(_close_pause_menu)
 	_node("SettingsButton").pressed.connect(_on_pause_settings_pressed)
 	_node("MainMenuButton").pressed.connect(_on_pause_main_menu_pressed)
+
+# The Town has no board: drop the status line, Check Answer and Reset, move Resume / Settings /
+# Main Menu up into their space and shrink the panel to match (both by multiples of the pixel scale).
+func _arrange_main_view_for_town() -> void:
+	for node_name: String in ["StatusLabel", "CheckButton", "ResetButton", "ResetNote"]:
+		_node(node_name).queue_free()
+	const SHIFT_UP: float = 102.0  # Resume's top (205) -> where Check Answer was (103)
+	for node_name: String in ["ResumeButton", "SettingsButton", "MainMenuButton"]:
+		var button: Control = _node(node_name)
+		button.offset_top -= SHIFT_UP
+		button.offset_bottom -= SHIFT_UP
+	var panel: Control = _node("MainPanel")
+	panel.offset_top += SHIFT_UP / 2.0
+	panel.offset_bottom -= SHIFT_UP / 2.0
 
 func _setup_settings_view() -> void:
 	# The X here goes back to the pause menu, same as the Back button -- it also
@@ -171,14 +205,19 @@ func _on_pause_settings_back_pressed() -> void:
 	pause_settings_view.visible = false
 	pause_menu_view.visible = true
 
+# The level re-lays itself out after a window change; the Town just follows the viewport on its own.
+func _refresh_layout() -> void:
+	if not _in_town():
+		game.ui_mgr.call_deferred("_update_layout")
+
 func _on_pause_fullscreen_pressed() -> void:
 	SettingsManager.toggle_fullscreen()
-	game.ui_mgr.call_deferred("_update_layout")
+	_refresh_layout()
 	_refresh_pause_settings_labels()
 
 func _on_pause_size_selected(preset: Vector2i) -> void:
 	SettingsManager.set_window_size(preset)
-	game.ui_mgr.call_deferred("_update_layout")
+	_refresh_layout()
 	_refresh_pause_settings_labels()
 
 func _on_pause_rebind_pressed(action: String) -> void:
@@ -205,7 +244,8 @@ func _handle_rebind_key(event: InputEventKey) -> bool:
 	return true
 
 func _on_pause_main_menu_pressed() -> void:
-	game._finalize_endless_run()
+	if not _in_town():
+		game._finalize_endless_run()
 	game.pause_menu_open = false
 	NetworkManager.leave_game()
 	game.get_tree().change_scene_to_file(Constants.SCENE_MAIN_MENU)
