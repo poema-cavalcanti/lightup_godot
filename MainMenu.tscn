@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://ct2ius0f76ijr"]
 
 [ext_resource type="Script" uid="uid://d1bkp86yd5gf7" path="res://MainMenu.gd" id="1"]
+[ext_resource type="Theme" path="res://MenuTheme.tres" id="99_menutheme"]
 
 [node name="MainMenu" type="Control" unique_id=2009433863]
 layout_mode = 3
@@ -9,9 +10,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("99_menutheme")
 script = ExtResource("1")
 
-[node name="Center" type="CenterContainer" parent="." unique_id=804108095]
+[node name="Center" type="CenterContainer" parent="." unique_id=165112856]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -19,74 +21,77 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Menu" type="VBoxContainer" parent="Center" unique_id=1706928301]
+[node name="Menu" type="VBoxContainer" parent="Center" unique_id=1029277801]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 8
 
-[node name="TitleLabel" type="Label" parent="Center/Menu" unique_id=1332129032]
+[node name="TitleLabel" type="Label" parent="Center/Menu" unique_id=1342064058]
 layout_mode = 2
 theme_override_font_sizes/font_size = 36
 text = "LIGHT UP"
+horizontal_alignment = 1
 
-[node name="SubtitleLabel" type="Label" parent="Center/Menu" unique_id=1399530768]
+[node name="SubtitleLabel" type="Label" parent="Center/Menu" unique_id=969733653]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "An Akari / Light Up puzzle"
+horizontal_alignment = 1
 
-[node name="CampaignButton" type="Button" parent="Center/Menu" unique_id=222875694]
+[node name="CampaignButton" type="Button" parent="Center/Menu" unique_id=201033526]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(220, 44)
+custom_minimum_size = Vector2(260, 56)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Campaign"
 
-[node name="NewCampaignButton" type="Button" parent="Center/Menu" unique_id=582658701]
+[node name="NewCampaignButton" type="Button" parent="Center/Menu" unique_id=1884481370]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(220, 28)
+custom_minimum_size = Vector2(260, 56)
 layout_mode = 2
 size_flags_horizontal = 0
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 14
 text = "Start New Campaign"
 
-[node name="EndlessModeButton" type="Button" parent="Center/Menu" unique_id=1552126508]
+[node name="EndlessModeButton" type="Button" parent="Center/Menu" unique_id=1307922776]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(220, 44)
+custom_minimum_size = Vector2(260, 56)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Endless Mode"
 
-[node name="LockNoteLabel" type="Label" parent="Center/Menu" unique_id=1856683249]
+[node name="LockNoteLabel" type="Label" parent="Center/Menu" unique_id=902390599]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Complete the Campaign to unlock"
+horizontal_alignment = 1
 
-[node name="MultiplayerButton" type="Button" parent="Center/Menu" unique_id=1892407603]
-custom_minimum_size = Vector2(220, 44)
+[node name="MultiplayerButton" type="Button" parent="Center/Menu" unique_id=1682017423]
+custom_minimum_size = Vector2(260, 56)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Multiplayer"
 
-[node name="HowToPlayButton" type="Button" parent="Center/Menu" unique_id=400884816]
-custom_minimum_size = Vector2(220, 44)
+[node name="HowToPlayButton" type="Button" parent="Center/Menu" unique_id=166478643]
+custom_minimum_size = Vector2(260, 56)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "How to Play"
 
-[node name="StatsButton" type="Button" parent="Center/Menu" unique_id=1509689807]
-custom_minimum_size = Vector2(220, 36)
+[node name="StatsButton" type="Button" parent="Center/Menu" unique_id=1950102435]
+custom_minimum_size = Vector2(260, 56)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Stats"
 
-[node name="SettingsButton" type="Button" parent="Center/Menu" unique_id=1241580778]
-custom_minimum_size = Vector2(220, 36)
+[node name="SettingsButton" type="Button" parent="Center/Menu" unique_id=780862325]
+custom_minimum_size = Vector2(260, 56)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Settings"
 
-[node name="QuitButton" type="Button" parent="Center/Menu" unique_id=1087111790]
-custom_minimum_size = Vector2(220, 36)
+[node name="QuitButton" type="Button" parent="Center/Menu" unique_id=203537408]
+custom_minimum_size = Vector2(260, 56)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Quit Game"

@@ -1,26 +1,28 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://djtnumkkcs8w0"]
 
-[ext_resource type="Script" path="res://Lobby.gd" id="1"]
+[ext_resource type="Script" uid="uid://cpoygqd532dgm" path="res://Lobby.gd" id="1"]
+[ext_resource type="Theme" uid="uid://cdr1dnof7psgh" path="res://MenuTheme.tres" id="99_menutheme"]
 
-[node name="Lobby" type="Control"]
+[node name="Lobby" type="Control" unique_id=1515485056]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("99_menutheme")
 script = ExtResource("1")
 
-[node name="BackButton" type="Button" parent="."]
+[node name="BackButton" type="Button" parent="." unique_id=2002461343]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 20.0
 offset_top = 16.0
-offset_right = 140.0
-offset_bottom = 56.0
+offset_right = 170.0
+offset_bottom = 72.0
 text = "Back"
 
-[node name="ChoiceView" type="VBoxContainer" parent="."]
+[node name="ChoiceView" type="VBoxContainer" parent="." unique_id=1364898105]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(340, 0)
 layout_mode = 1
@@ -28,44 +30,46 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -170.0
-offset_top = 180.0
+offset_top = 64.0
 offset_right = 170.0
-offset_bottom = 460.0
+offset_bottom = 488.0
 grow_horizontal = 2
 theme_override_constants/separation = 14
+alignment = 1
 
-[node name="TitleLabel" type="Label" parent="ChoiceView"]
+[node name="TitleLabel" type="Label" parent="ChoiceView" unique_id=1051644333]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "Multiplayer"
+horizontal_alignment = 1
 
-[node name="HostButton" type="Button" parent="ChoiceView"]
-custom_minimum_size = Vector2(220, 44)
+[node name="HostButton" type="Button" parent="ChoiceView" unique_id=1369035535]
+custom_minimum_size = Vector2(260, 56)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Host Game"
 
-[node name="JoinButton" type="Button" parent="ChoiceView"]
-custom_minimum_size = Vector2(220, 44)
+[node name="JoinButton" type="Button" parent="ChoiceView" unique_id=1252809907]
+custom_minimum_size = Vector2(260, 56)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Join Game"
 
-[node name="NetworkButton" type="Button" parent="ChoiceView"]
+[node name="NetworkButton" type="Button" parent="ChoiceView" unique_id=430261947]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(260, 36)
+custom_minimum_size = Vector2(320, 56)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Network: LAN / direct IP"
 
-[node name="ChoiceStatusLabel" type="Label" parent="ChoiceView"]
+[node name="ChoiceStatusLabel" type="Label" parent="ChoiceView" unique_id=52648342]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(340, 60)
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 autowrap_mode = 2
 
-[node name="HostView" type="VBoxContainer" parent="."]
+[node name="HostView" type="VBoxContainer" parent="." unique_id=2112388076]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(340, 0)
@@ -80,19 +84,19 @@ offset_bottom = 534.0
 grow_horizontal = 2
 theme_override_constants/separation = 14
 
-[node name="TitleLabel" type="Label" parent="HostView"]
+[node name="TitleLabel" type="Label" parent="HostView" unique_id=433943131]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "Hosting"
 
-[node name="AddressLabel" type="Label" parent="HostView"]
+[node name="AddressLabel" type="Label" parent="HostView" unique_id=1595086515]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Your LAN address: {ip}
 Port: {port}"
 
-[node name="HintLabel" type="Label" parent="HostView"]
+[node name="HintLabel" type="Label" parent="HostView" unique_id=1794709673]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(340, 40)
 layout_mode = 2
@@ -101,10 +105,10 @@ text = "Share this with up to 3 friends on your network.
 For remote friends, use a private network (e.g. Tailscale) rather than port-forwarding."
 autowrap_mode = 2
 
-[node name="PlayerRow" type="HBoxContainer" parent="HostView"]
+[node name="PlayerRow" type="HBoxContainer" parent="HostView" unique_id=1142180854]
 layout_mode = 2
 
-[node name="HostPlayerListLabel" type="Label" parent="HostView/PlayerRow"]
+[node name="HostPlayerListLabel" type="Label" parent="HostView/PlayerRow" unique_id=1684934264]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -112,28 +116,28 @@ theme_override_font_sizes/font_size = 16
 text = "Connected (1/4):
 Player 1 (Host)  <- you"
 
-[node name="InviteButton" type="Button" parent="HostView/PlayerRow"]
+[node name="InviteButton" type="Button" parent="HostView/PlayerRow" unique_id=1352573318]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 36)
+custom_minimum_size = Vector2(190, 56)
 layout_mode = 2
 size_flags_vertical = 0
 text = "Invite Friends"
 
-[node name="Buttons" type="HBoxContainer" parent="HostView"]
+[node name="Buttons" type="HBoxContainer" parent="HostView" unique_id=1685636210]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="StartButton" type="Button" parent="HostView/Buttons"]
-custom_minimum_size = Vector2(160, 44)
+[node name="StartButton" type="Button" parent="HostView/Buttons" unique_id=1415959869]
+custom_minimum_size = Vector2(200, 56)
 layout_mode = 2
 text = "Start Game"
 
-[node name="CancelButton" type="Button" parent="HostView/Buttons"]
-custom_minimum_size = Vector2(120, 44)
+[node name="CancelButton" type="Button" parent="HostView/Buttons" unique_id=1679951774]
+custom_minimum_size = Vector2(160, 56)
 layout_mode = 2
 text = "Cancel"
 
-[node name="JoinView" type="VBoxContainer" parent="."]
+[node name="JoinView" type="VBoxContainer" parent="." unique_id=1574458708]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(340, 0)
@@ -148,36 +152,36 @@ offset_bottom = 450.0
 grow_horizontal = 2
 theme_override_constants/separation = 14
 
-[node name="TitleLabel" type="Label" parent="JoinView"]
+[node name="TitleLabel" type="Label" parent="JoinView" unique_id=1326856567]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "Join Game"
 
-[node name="InstructionLabel" type="Label" parent="JoinView"]
+[node name="InstructionLabel" type="Label" parent="JoinView" unique_id=650425534]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Host's LAN address:"
 
-[node name="IpInput" type="LineEdit" parent="JoinView"]
+[node name="IpInput" type="LineEdit" parent="JoinView" unique_id=1360869288]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(220, 32)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "127.0.0.1"
 
-[node name="ConnectButton" type="Button" parent="JoinView"]
-custom_minimum_size = Vector2(140, 40)
+[node name="ConnectButton" type="Button" parent="JoinView" unique_id=1283358099]
+custom_minimum_size = Vector2(180, 56)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Connect"
 
-[node name="StatusLabel" type="Label" parent="JoinView"]
+[node name="StatusLabel" type="Label" parent="JoinView" unique_id=142504974]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(340, 50)
 layout_mode = 2
 autowrap_mode = 2
 
-[node name="ClientView" type="VBoxContainer" parent="."]
+[node name="ClientView" type="VBoxContainer" parent="." unique_id=1452831858]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(340, 0)
@@ -192,12 +196,12 @@ offset_bottom = 400.0
 grow_horizontal = 2
 theme_override_constants/separation = 14
 
-[node name="TitleLabel" type="Label" parent="ClientView"]
+[node name="TitleLabel" type="Label" parent="ClientView" unique_id=498601916]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "Connected"
 
-[node name="ClientPlayerListLabel" type="Label" parent="ClientView"]
+[node name="ClientPlayerListLabel" type="Label" parent="ClientView" unique_id=1927774418]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
@@ -205,12 +209,12 @@ text = "Connected (2/4):
 Player 1 (Host)
 Player 2  <- you"
 
-[node name="WaitingLabel" type="Label" parent="ClientView"]
+[node name="WaitingLabel" type="Label" parent="ClientView" unique_id=1451175784]
 layout_mode = 2
 text = "Waiting for the host to start the game..."
 
-[node name="LeaveButton" type="Button" parent="ClientView"]
-custom_minimum_size = Vector2(120, 40)
+[node name="LeaveButton" type="Button" parent="ClientView" unique_id=1921731995]
+custom_minimum_size = Vector2(160, 56)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Leave"
