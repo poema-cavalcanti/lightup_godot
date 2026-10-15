@@ -57,7 +57,7 @@ func setup(game_ref: Node2D, show_admin_buttons: bool) -> void:
 	game.next_level_button = _keep_if(next_level_button, show_admin_buttons and is_campaign)
 	game.continue_button = _keep_if(continue_button, show_admin_buttons and not is_campaign)
 	game.continue_waiting_label = _keep_if(continue_waiting_label, not show_admin_buttons and not is_campaign)
-	game.shop_button = _keep_if(shop_button, not is_campaign)  # everyone can shop, host or not
+	game.shop_button = _keep_if(shop_button, not is_campaign and not NetworkManager.is_multiplayer)  # Endless only: multiplayer shops in the Town
 
 	# The buttons the HUD shows on its own (Try Again, and the one under the
 	# summary panel) get the green pixel-art look (see PixelButton); if

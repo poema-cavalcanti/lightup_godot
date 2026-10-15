@@ -45,8 +45,8 @@ func _build_ui() -> void:
 	var show_admin_buttons: bool = (not NetworkManager.is_multiplayer) or game.multiplayer.is_server()
 	game.hud.setup(game, show_admin_buttons)
 
-	# The shop window for Endless / multiplayer (the campaign shops in Town.tscn instead).
-	if not CampaignManager.is_campaign_active:
+	# The shop window for Endless (the campaign and multiplayer shop in Town.tscn instead).
+	if not CampaignManager.is_campaign_active and not NetworkManager.is_multiplayer:
 		game.shop_mgr.build_panel()
 
 	# Inventory/equipment overlay -- its own top-level CanvasLayer rather than
