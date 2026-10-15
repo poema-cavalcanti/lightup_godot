@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://ln86ymxpyw3o"]
+[gd_scene format=3 uid="uid://byiagmpv25h5r"]
 
 [ext_resource type="Script" uid="uid://b62jmranx3ej0" path="res://HowToPlay.gd" id="1"]
 [ext_resource type="Theme" uid="uid://cdr1dnof7psgh" path="res://MenuTheme.tres" id="99_menutheme"]
@@ -62,19 +62,21 @@ text = "The rules"
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 15
-text = "Light Up is played on a grid of black and white cells. Your goal is to place light bulbs on white cells so that every white cell is lit.
+text = "Light Up is played on a grid of floor and wall cells. Your goal is to place lights on floor cells so that every floor cell is lit.
 
-A bulb lights every cell in its row and column, in all four directions, until a black cell (or the edge of the grid) blocks the light.
+A light lights every floor cell in its row and column, in all four directions, until a wall cell (or the edge of the grid) blocks the light.
 
-No bulb may light up another bulb. If two bulbs can see each other, that's not allowed.
+Some walls have a number of light holders in them. That number tells you exactly how many lights must be placed on the floor cells directly touching that wall cell's edges (up, down, left, right) -- no more, no fewer. If there is a cloth with a NO symbol covering the wall then no lights must be placed directly toucing that wall cell's edges.
 
-Some black cells have a number in them. That number tells you exactly how many bulbs must be placed on the white cells directly touching that black cell's edges (up, down, left, right) -- no more, no fewer.
+No light may light up another light. If two lights can see each other, that's not allowed.
 
-The puzzle is solved once every white cell is lit, no two bulbs see each other, and every numbered black cell has exactly the right number of bulbs next to it.
+Watch out: leaving two lights lighting each other for 5 seconds spawns an enemy at the conflict, and another every 5 seconds that stays unresolved. Enemies walk toward the nearest player and attack when adjacent.
 
-Watch out: leaving two bulbs lighting each other unresolved for 5 seconds spawns an enemy at the conflict, and another every 5 seconds it stays unresolved. Enemies walk toward the nearest player and attack when adjacent. Solving the puzzle clears every enemy on the board.
+Each level also has a 5-minute clock. If it runs out while any floor tile is still unlit, a boss spawns -- it can melee when adjacent or shoot at range along a clear row or column, but its ranged attack can't go through walls. Correctly satisfying a numbered clue adds 30 seconds to that clock the first time you get it right, so careful, correct play buys you breathing room.
 
-Each level also has a 5-minute clock. If it runs out while any tile is still unlit, a boss spawns with 50 health -- it can melee when adjacent or shoot at range along a clear row or column, but its ranged attack can't go through walls. Correctly satisfying a numbered clue adds 30 seconds to that clock the first time you get it right, so careful, correct play buys you breathing room."
+Solving the puzzle clears every enemy on the board.
+
+The puzzle is solved once every floor cell is lit, no two lights see each other, and every numbered wall cell has exactly the right number of lights next to it."
 autowrap_mode = 2
 
 [node name="Spacer1" type="Control" parent="Scroll/Margin/Content" unique_id=1063259775]
@@ -93,19 +95,17 @@ size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 15
 text = "{move_up}/{move_left}/{move_down}/{move_right}  --  walk your player character around the grid, one cell at a time. Black cells are walls -- you can't walk through them.
 
-{place_light}  --  place a bulb at your feet, or pick it back up if one's already there.
+{place_light}  --  place a light at your feet, or pick it back up if one's already there.
 
-M  --  toggle a pencil \"mark\" at your feet -- a note to yourself (e.g. \"don't put a bulb here\"). Purely a scratchpad, it has no effect on solving.
+{attack}  --  attack an enemy in an adjacent cell.
 
-{attack}  --  attack an enemy in an adjacent cell (5 damage; normal enemies have 10 health so two hits clears one, the boss has 50).
-
-{block} (hold)  --  block: takes 25% less melee damage and no ranged damage while held, but you can't attack while blocking.
+{block} (hold)  --  block: takes less melee damage and no ranged damage while held, but you can't attack while blocking.
 
 F11  --  toggle fullscreen, any time.
 
 Escape  --  pause menu (singleplayer only pauses countdowns; in multiplayer it's just your own local menu). Movement, placing a light, attacking, and blocking can all be rebound from the Settings screen.
 
-You have 100 health. A normal enemy deals 5 damage per hit when adjacent; the boss deals 10 melee or 5 at range. If your health reaches 0 you're defeated and can't act -- in multiplayer you respawn after 10 seconds as long as at least one teammate is still standing; if everyone is defeated at once, only a Reset brings the board back. In singleplayer a defeat needs a Reset too.
+You have 100 health. If your health reaches 0 you're defeated and can't act. In singleplayer you can Reset the board and Try Again -- in multiplayer you respawn after 10 seconds as long as at least one teammate is still standing; if everyone is defeated at once, Reset the board to Try Again.
 
 In multiplayer, everyone shares one board and moves independently with their own controls -- your own avatar has a white ring around it so you can tell it apart from your teammates'."
 autowrap_mode = 2
