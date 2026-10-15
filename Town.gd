@@ -542,6 +542,11 @@ func _town_sync_departed(player_index: int) -> void:
 	if net != null:
 		net._sync_departed(player_index)
 
+@rpc("authority", "call_local", "reliable")
+func _town_sync_loading() -> void:
+	if net != null:
+		net._sync_loading()
+
 @rpc("any_peer", "call_remote", "reliable")
 func _request_purchase(player_index: int, item_id: String) -> void:
 	shop_mgr._request_purchase(player_index, item_id)

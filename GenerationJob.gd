@@ -13,6 +13,13 @@ var cancelled: bool = false
 var started_ms: int = 0
 var _thread: Thread = null
 
+# The first NAVIGABLE_ATTEMPTS layouts are made walkable by PuzzleNavigator
+# (cheap: the layout is kept and its white regions are bridged, and only a layout
+# that gets "stuck" is replaced by a new one). If all of those are spent, it falls
+# back to the original method -- only accepting layouts that are connected as
+# generated -- which is slower but doesn't depend on the conversion succeeding.
+const NAVIGABLE_ATTEMPTS: int = 12
+
 func start(puzzle_size: Vector2i, density: float) -> void:
 	size = puzzle_size
 	started_ms = Time.get_ticks_msec()
@@ -24,7 +31,7 @@ func _run(density: float) -> void:
 	rng.randomize()
 	while not cancelled:
 		attempts += 1
-		var rows_found: PackedStringArray = LightUpGenerator.try_generate(size.x, size.y, density, rng)
+		var rows_found: PackedStringArray = LightUpGenerator.try_generate(size.x, size.y, density, rng, attempts > NAVIGABLE_ATTEMPTS)
 		if not rows_found.is_empty():
 			result_rows = rows_found
 			break

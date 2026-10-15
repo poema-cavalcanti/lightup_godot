@@ -25,6 +25,7 @@ signal connected_ok
 signal connection_failed_signal
 signal kicked_from_server
 signal steam_host_ready
+signal generation_started  # the host began building the match's first board (everyone shows a loading popup)
 signal steam_host_failed(reason: String)
 signal steam_join_failed(reason: String)
 
@@ -310,24 +311,23 @@ func rate_limit_ok(peer_id: int, action: String, min_interval: float) -> bool:
 
 # --- Starting the match ---------------------------------------------------
 
-# Host only. Generates the puzzle, works out everyone's starting corner,
-# and tells every peer (itself included, via call_local) to load Game.tscn.
-func start_game(rows: int, cols: int, density: float) -> void:
+# Host only, first step of starting: tells every peer (itself included) to put up
+# the loading popup right away. The lobby then builds the board on a worker
+# thread (GenerationJob) and hands it to start_game() when it's ready.
+func begin_generation() -> void:
 	if not is_host:
 		return
-	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
-	rng.randomize()
-	var generation_result: Dictionary = LightUpGenerator.generate(rows, cols, density, rng)
-	var puzzle_rows: PackedStringArray
-	if generation_result["success"]:
-		puzzle_rows = generation_result["rows"]
-	else:
-		# exceedingly unlikely given how reliably the generator succeeds in
-		# testing, but fail safe rather than leave everyone hanging
-		puzzle_rows = PackedStringArray()
-		for row in range(rows):
-			puzzle_rows.append(".".repeat(cols))
+	rpc("_generation_started")
 
+@rpc("authority", "call_local", "reliable")
+func _generation_started() -> void:
+	generation_started.emit()
+
+# Host only. Given the finished board, works out everyone's starting corner
+# and tells every peer (itself included, via call_local) to load Game.tscn.
+func start_game(puzzle_rows: PackedStringArray) -> void:
+	if not is_host:
+		return
 	var start_positions: Array = BoardUtil.corner_positions(puzzle_rows, connected_peer_ids.size())
 	match_in_progress = true
 	if using_steam:

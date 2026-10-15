@@ -125,6 +125,7 @@ The project is organized around a few scenes and a set of single-purpose scripts
 
 - `Solver.gd` (`LightUpSolver`) — a constraint-propagation + backtracking solver with a node budget so large searches degrade safely instead of hanging. `verify_answer()` checks an already-placed board directly with no search — it's the single rule-checking function used by the live status and by Check Answer, so there's exactly one definition of "correct" in the project.
 - `Generator.gd` (`LightUpGenerator`) — builds a random layout, derives clues from a valid solution, confirms the puzzle is uniquely solvable, then trims clues while it stays unique. `GenerationJob.gd` runs it on a worker thread.
+- `PuzzleNavigator.gd` — turns a finished puzzle whose white cells are split into separate regions into a walkable one (opens unnumbered black cells between regions, repairing clues so it stays uniquely solvable). The generator uses it instead of rejecting every layout that isn't connected as generated; if it gets stuck on a board, a new board is generated, and after a number of failed boards `GenerationJob` falls back to the strict connected-layout method.
 - `BoardUtil.gd` — turns a puzzle's string encoding into player spawn corners. `GridGeometry.gd` — shared grid/camera math used by both the level and the Town.
 - `MoveRepeater.gd` — hold-to-move input timing, shared by `Player.gd` and `Town.gd`.
 
@@ -135,6 +136,7 @@ The project is organized around a few scenes and a set of single-purpose scripts
 - `TownNet.gd` — the shared multiplayer Town (synced walking, town fights, shop hiding, leaving together); `SessionEconomy.gd` carries a match's gold and items between a level and the Town.
 - `ItemData.gd` — the item catalog, shop stock, icons and armor overlay art.
 - `PixelButton.gd` / `PixelPanel.gd` — pixel-art UI skinning.
+- `LoadingPopup.tscn` — the "Loading..." window shown to everyone while the host's board is generated (starting a multiplayer match, and leaving the Town if the next board isn't ready yet).
 
 **Other:**
 

@@ -11,6 +11,7 @@ class Result:
 	extends RefCounted
 	var count: int = 0
 	var solution: Array = []  # first solution found, as a 2D Array[bool]; empty until found
+	var solutions: Array = []  # every solution found (up to max_solutions), each a 2D Array[bool]; solutions[0] == solution
 	var nodes: int = 0
 	var exhausted: bool = false  # true if max_nodes was hit before the search
 								   # finished -- count/solution are then INCONCLUSIVE,
@@ -81,8 +82,10 @@ static func _depth_first_search(grid: Array, rows: int, cols: int, state: Array,
 	if next_unknown.is_empty():
 		if _verify_complete(grid, rows, cols, working_state):
 			result.count += 1
+			var found_solution: Array = _extract_bulbs(working_state, rows, cols)
 			if result.solution.is_empty():
-				result.solution = _extract_bulbs(working_state, rows, cols)
+				result.solution = found_solution
+			result.solutions.append(found_solution)
 		return
 
 	var branch_row: int = next_unknown[0]

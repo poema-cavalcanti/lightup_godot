@@ -41,6 +41,7 @@ var pending_timer: float = 0.0
 var job: GenerationJob = null
 var transitioning: bool = false
 var waiting_label: Label = null
+var loading_popup: CanvasLayer = null
 
 func _init(town_ref: Node2D) -> void:
 	town = town_ref
@@ -64,6 +65,8 @@ func setup() -> void:
 	waiting_label.add_theme_constant_override("outline_size", 6)
 	layer.add_child(waiting_label)
 	town.add_child(layer)
+	loading_popup = preload("res://LoadingPopup.tscn").instantiate()
+	town.add_child(loading_popup)
 
 	town.multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 	NetworkManager.kicked_from_server.connect(_on_host_gone)
@@ -358,8 +361,8 @@ func _check_everyone_left() -> void:
 	_start_next_level()
 
 func _start_next_level() -> void:
-	waiting_label.text = "Generating the next puzzle..."
-	waiting_label.visible = true
+	if job != null and not job.done:
+		town.rpc("_town_sync_loading")  # the board isn't ready yet: everyone sees the loading popup
 	while job != null and not job.done:
 		await town.get_tree().process_frame
 		if job == null or job.cancelled:
@@ -371,6 +374,11 @@ func _start_next_level() -> void:
 	job = null
 	var positions: Array = BoardUtil.corner_positions(rows, town.players.size())
 	NetworkManager.rpc("_begin_game", rows, positions, NetworkManager.pending_peer_order, true)
+
+# Every peer: the host is still building the next board.
+func _sync_loading() -> void:
+	waiting_label.visible = false
+	loading_popup.show_popup()
 
 # --- Late loaders ------------------------------------------------------------------
 

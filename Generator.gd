@@ -40,7 +40,14 @@ static func generate(rows: int, cols: int, black_density: float, rng: RandomNumb
 
 # A single layout attempt. Returns the puzzle rows, or an empty array if this
 # layout didn't pan out.
-static func try_generate(rows: int, cols: int, black_density: float, rng: RandomNumberGenerator) -> PackedStringArray:
+#
+# require_connected = true (the original behavior) throws away any layout whose
+# white cells aren't one connected region -- which on a big board is nearly
+# every layout. false skips that check and instead, once the puzzle is finished
+# and trimmed, connects the white cells afterwards with PuzzleNavigator (the
+# result is still uniquely solvable); that returns an empty array when the
+# conversion gets stuck, and the caller simply tries a new layout.
+static func try_generate(rows: int, cols: int, black_density: float, rng: RandomNumberGenerator, require_connected: bool = true) -> PackedStringArray:
 	var grid: Array = _random_black_layout(rows, cols, black_density, rng)
 
 	var white_count: int = 0
@@ -51,7 +58,7 @@ static func try_generate(rows: int, cols: int, black_density: float, rng: Random
 	if white_count < rows * cols / 2:
 		return PackedStringArray()  # too many black cells to be an interesting puzzle
 
-	if not _is_fully_connected(grid, rows, cols):
+	if require_connected and not _is_fully_connected(grid, rows, cols):
 		return PackedStringArray()  # some white cell(s) are walled off -- unreachable by the player
 
 	# Step 1-2: find ANY valid bulb placement for this layout.
@@ -70,7 +77,10 @@ static func try_generate(rows: int, cols: int, black_density: float, rng: Random
 	# Step 5: trim clues while uniqueness holds.
 	_trim_clues(grid, rows, cols, rng)
 
-	return _grid_to_rows(grid, rows, cols)
+	var puzzle_rows: PackedStringArray = _grid_to_rows(grid, rows, cols)
+	if not require_connected:
+		return PuzzleNavigator.make_navigable(puzzle_rows)
+	return puzzle_rows
 
 static func _random_black_layout(rows: int, cols: int, density: float, rng: RandomNumberGenerator) -> Array:
 	var grid: Array = []
