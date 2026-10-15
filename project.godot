@@ -41,3 +41,8 @@ theme/custom_font="uid://b3j6r6csx20xf"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 environment/defaults/default_clear_color=Color(0.11372549, 0.10980392, 0.16862746, 1)
+
+[steam]
+
+initialization/processes/initialize_on_startup=true
+settings/enable_debug=true
