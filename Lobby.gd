@@ -10,6 +10,42 @@ enum View { CHOICE, HOST_WAITING, JOIN_ENTRY, CLIENT_WAITING }
 
 const MULTIPLAYER_ROWS: int = 30
 const MULTIPLAYER_COLS: int = 30
+
+# The first board of every multiplayer match: always this one (a navigable 30x30 puzzle), so
+# Start Game is instant. The later boards are generated in the background while it's played
+# (Game._start_pregeneration, handed on to the Town -- see TownNet).
+const MULTIPLAYER_STARTING_LEVEL: Array[String] = [
+	".2##.....0......0......11..#..",
+	".....10......11.#..2#1#......1",
+	"#...#.2.1.#....#....##.#.1...#",
+	"..........1.0#.#...#.........#",
+	"..#.1##.......##..#..#..10....",
+	"#...0#.#.#01...2..1..0..###.1.",
+	"#.#.....#..#......#.#....#.2#.",
+	".1........#####2..1.1#..2.....",
+	".##.##.3.2........#...#2.3.3..",
+	".#1...1#.....#.#..##.0.......#",
+	".#.#.....#....2..2......1.##..",
+	"....1##2#0....#.#.....###.....",
+	"..........1..#1.#.....1...2...",
+	"##.........#...#.#..1.1...#.#.",
+	"..###0.#.1...#...#2#..#..2..2.",
+	".#..1..1..1###..1...1.#.101#..",
+	".0.#...#.#..1.2#..#.........##",
+	"...1...1.......#2..0..........",
+	".....###.....2.#....##1#1#....",
+	"..#2...#....#..2....#.....0.0.",
+	"#....#..#.21..#.#.....0#...##.",
+	"..0...2#...#........4.#.##.1#.",
+	".....1..2#.#..##1###.#......#.",
+	".1#.#....#.#......#..#.....#.#",
+	".1.2##..#..#..#...01....1#...#",
+	"....#1..0..2..##.....2.0##.2..",
+	"1.........#...1.#1.#....#.....",
+	"0...2.2.#0....#....#.3.#.#...1",
+	"1......#00#..#.20......#......",
+	"..#..#0......#......#.....1#2."
+]
 const DEFAULT_JOIN_ADDRESS: String = "127.0.0.1"
 
 var current_view: View = View.CHOICE
@@ -194,7 +230,7 @@ func _on_connect_pressed() -> void:
 	# view transitions on the connected_ok / connection_failed_signal callbacks above
 
 func _on_start_pressed() -> void:
-	NetworkManager.start_game(MULTIPLAYER_ROWS, MULTIPLAYER_COLS, Constants.GENERATOR_DENSITY)
+	NetworkManager.start_game(PackedStringArray(MULTIPLAYER_STARTING_LEVEL))
 
 func _on_leave_pressed() -> void:
 	NetworkManager.leave_game()

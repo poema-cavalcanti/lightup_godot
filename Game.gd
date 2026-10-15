@@ -117,11 +117,20 @@ var boss_was_summoned_this_level: bool = false  # feeds CampaignManager.record_l
 var boss_killed_this_level: bool = false  # feeds CampaignManager.credit_level_earnings() -- see CombatManager._damage_enemy_by_id
 var enemies_killed_this_level: int = 0  # ditto, regular (non-boss) kills only
 var level_earnings: Dictionary = {}  # this level's gold breakdown, set once on solve -- see GameUIManager._update_status()
+var earnings_credited: bool = false  # this board's earnings have been paid out already, so un-solving and re-solving it can't pay twice. Reset only when a NEW puzzle loads (not on Reset -- or Reset would be a re-farm button).
 
 # --- Endless Mode session stats (see SaveManager.record_endless_run) -------
 var next_job: GenerationJob = null  # background-generated next Endless/host puzzle
 var generating_new_puzzle: bool = false
-var endless_gold: int = 0  # session-only gold from solved Endless/multiplayer puzzles (no Town access from those modes yet)
+# Gold in Endless / multiplayer, one entry per player (index == player_index). Session-only: never saved,
+# gone when the Game scene closes. The campaign uses CampaignManager.gold instead. Deliberately NOT a field of
+# players[i]: those dictionaries are rebuilt from scratch on every Reset, new puzzle and respawn.
+var player_gold: Array[int] = []
+# What each player has bought this session, parallel to player_gold: item_id -> quantity. Same rules (session-only,
+# kept out of players[i]).
+var player_inventory: Array[Dictionary] = []
+# What each player has equipped, parallel to the two above: {slot: item_id} (see LoadoutManager.gd).
+var player_equipped: Array[Dictionary] = []
 @onready var gen_overlay: CanvasLayer = %GenerationOverlay  # "Generating a puzzle..." -- a node of Game.tscn
 @onready var gen_overlay_label: Label = %GenerationLabel
 var current_streak: int = 0  # puzzles solved in a row this Endless Mode run
@@ -140,6 +149,7 @@ var projectiles: Array[Dictionary] = []  # visual-only, see _sync_spawn_projecti
 var status_label: Label
 var combat_status_label: Label
 var reset_button: Button
+var shop_button: Button  # on the post-solve screen, Endless / multiplayer only -- opens the shop
 var check_button: Button
 var next_level_button: Button
 # Endless / multiplayer equivalent of next_level_button: shown on the solve
@@ -225,6 +235,7 @@ var enemy_sheets: Dictionary = {}  # "enemy_idle", "boss_tier_1_attack", ... -> 
 var border_textures: Dictionary = {}
 
 const PlayerLogic := preload("res://Player.gd")
+const LoadoutLogic := preload("res://LoadoutManager.gd")
 const EnemyLogic := preload("res://Enemy.gd")
 const CombatLogic := preload("res://CombatManager.gd")
 const UILogic := preload("res://GameUIManager.gd")
@@ -232,6 +243,7 @@ const HUDLogic := preload("res://HUDManager.gd")
 const PauseMenuLogic := preload("res://PauseMenuManager.gd")
 const AssetLogic := preload("res://AssetLoader.gd")
 const PuzzleLogic := preload("res://PuzzleBoard.gd")
+const ShopLogic := preload("res://ShopManager.gd")
 
 var player_mgr := PlayerLogic.new(self)
 var enemy_mgr := EnemyLogic.new(self)
@@ -241,6 +253,8 @@ var hud_mgr := HUDLogic.new(self)
 var pause_mgr := PauseMenuLogic.new(self)
 var asset_mgr := AssetLogic.new(self)
 var puzzle_mgr := PuzzleLogic.new(self)
+var shop_mgr := ShopLogic.new(self)
+var loadout_mgr := LoadoutLogic.new(self)
 
 func _ready() -> void:
 	%GenerationCancelButton.pressed.connect(_on_generation_cancel_pressed)
@@ -261,6 +275,21 @@ func _ready() -> void:
 		my_player_index = 0
 		players.clear()
 		players.append(player_mgr._create_player_state(0, 0))
+
+	if SessionEconomy.take(players.size()):
+		# Back from the multiplayer Town: carry on with the match's gold, items and gear.
+		player_gold = SessionEconomy.gold
+		player_inventory = SessionEconomy.inventory
+		player_equipped = SessionEconomy.equipped
+	else:
+		player_gold.clear()
+		player_gold.resize(players.size())
+		player_gold.fill(0)
+		player_inventory.clear()
+		player_equipped.clear()
+		for _player_index in range(players.size()):
+			player_inventory.append({})
+			player_equipped.append(LoadoutLogic.empty_loadout())
 
 	puzzle_mgr.parse_puzzle()
 
@@ -291,24 +320,27 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.keycode == SettingsManager.get_key_binding("block") and not event.echo:
 		if event.pressed and pause_mgr._handle_rebind_key(event):
 			return
-		if event.pressed and _is_inventory_open():
+		if event.pressed and _is_modal_open():
 			return
 		player_mgr._handle_block_input(event.pressed)
 		return
 	if event is InputEventKey and not event.echo and player_mgr._is_move_keycode(event.keycode):
 		if event.pressed and pause_mgr._handle_rebind_key(event):
 			return
-		if event.pressed and (pause_menu_open or _is_inventory_open()):
-			return  # ignore new presses while paused/inventory open; releases still fall through so nothing stays stuck held
+		if event.pressed and (pause_menu_open or _is_modal_open()):
+			return  # ignore new presses while paused/inventory/shop open; releases still fall through so nothing stays stuck held
 		player_mgr._handle_move_key_event(event.keycode, event.pressed)
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		if pause_mgr._handle_rebind_key(event):
 			return
 		if event.keycode == KEY_ESCAPE:
-			pause_mgr._toggle_pause_menu()
+			if shop_mgr.is_open():
+				shop_mgr.close_shop()  # Escape closes the shop first, like any window
+			else:
+				pause_mgr._toggle_pause_menu()
 			return
-		if pause_menu_open or _is_inventory_open():
+		if pause_menu_open or _is_modal_open():
 			return
 		var keycode: int = event.keycode
 		if keycode == SettingsManager.get_key_binding("place_light"):
@@ -321,6 +353,10 @@ func _input(event: InputEvent) -> void:
 
 func _is_inventory_open() -> bool:
 	return inventory_panel != null and inventory_panel.is_open()
+
+# Any overlay that should hold off gameplay input (placing bulbs, attacking, moving) while it is up.
+func _is_modal_open() -> bool:
+	return _is_inventory_open() or shop_mgr.is_open()
 
 func _notification(what: int) -> void:
 	# The window losing OS focus (alt-tab, etc.) can eat the key-up event
@@ -378,6 +414,7 @@ func _on_reset_pressed() -> void:
 @rpc("authority", "call_local", "reliable")
 func _sync_full_reset(new_bulbs: Array, new_positions: Array) -> void:
 	bulbs = new_bulbs
+	shop_mgr.close_shop()
 	error_flash_cells.clear()
 	error_flash_timer = 0.0
 	for player_index in range(players.size()):
@@ -427,18 +464,44 @@ func _start_pregeneration() -> void:
 
 func _exit_tree() -> void:
 	if next_job != null:
-		next_job.cancel()
-		next_job.finish()
+		next_job.abandon()  # not cancel() + finish(): that would freeze here until the attempt in flight ended
 
 func _on_generation_cancel_pressed() -> void:
 	if next_job != null:
 		next_job.cancel()
 
-# Every peer: fills the post-solve panel and tallies this session's gold.
+# Every peer: fills the post-solve panel and pays out the level's earnings. Every player gets the FULL total
+# (it isn't split). Each peer applies the same host broadcast to its own copy, so the copies stay identical.
 @rpc("authority", "call_local", "reliable")
 func _show_solve_summary(breakdown: Dictionary) -> void:
-	endless_gold += breakdown["total"]
+	for player_index in range(player_gold.size()):
+		player_gold[player_index] += breakdown["total"]
 	earnings_panel.populate(breakdown)
+
+# --- Shopping (Endless / multiplayer): the logic lives in ShopManager.gd; these are just
+# --- its RPC entry points, like the other managers' wrappers.
+
+@rpc("any_peer", "call_remote", "reliable")
+func _request_purchase(player_index: int, item_id: String) -> void:
+	shop_mgr._request_purchase(player_index, item_id)
+
+@rpc("authority", "call_local", "reliable")
+func _sync_purchase(player_index: int, item_id: String, new_gold: int, new_quantity: int) -> void:
+	shop_mgr._sync_purchase(player_index, item_id, new_gold, new_quantity)
+
+@rpc("authority", "call_remote", "reliable")
+func _purchase_rejected(item_id: String, message: String) -> void:
+	shop_mgr._purchase_rejected(item_id, message)
+
+# Equipping (Endless / multiplayer): logic in LoadoutManager.gd.
+
+@rpc("any_peer", "call_remote", "reliable")
+func _request_equip(player_index: int, slot: String, item_id: String) -> void:
+	loadout_mgr._request_equip(player_index, slot, item_id)
+
+@rpc("authority", "call_local", "reliable")
+func _sync_equipped(player_index: int, slot: String, item_id: String) -> void:
+	loadout_mgr._sync_equipped(player_index, slot, item_id)
 
 # Endless / multiplayer: the summary's Continue button (host / singleplayer
 # only -- see GameUIManager._build_ui). Mirrors Next Level in campaign: the
@@ -447,7 +510,21 @@ func _show_solve_summary(breakdown: Dictionary) -> void:
 func _on_continue_pressed() -> void:
 	if not puzzle_mgr._is_solved():
 		return
+	if NetworkManager.is_multiplayer:
+		if multiplayer.is_server():
+			rpc("_go_to_town")  # multiplayer: the Town comes between levels; it generates the next board itself
+		return
 	_advance_to_new_puzzle()
+
+# Multiplayer, every peer: off to the shared Town (Town.gd) with this match's economy.
+@rpc("authority", "call_local", "reliable")
+func _go_to_town() -> void:
+	SessionEconomy.store(player_gold, player_inventory, player_equipped)
+	if next_job != null:
+		# The host's background generation carries on in the Town instead of being thrown away (see _exit_tree).
+		NetworkManager.prepared_job = next_job
+		next_job = null
+	get_tree().change_scene_to_file(Constants.SCENE_TOWN)
 
 func _advance_to_new_puzzle() -> void:
 	if NetworkManager.is_multiplayer and not multiplayer.is_server():
@@ -480,6 +557,8 @@ func _advance_to_new_puzzle() -> void:
 @rpc("authority", "call_local", "reliable")
 func _sync_new_puzzle(new_rows_array: PackedStringArray, new_positions: Array) -> void:
 	current_puzzle_rows = new_rows_array
+	earnings_credited = false
+	shop_mgr.close_shop()
 	error_flash_cells.clear()
 	error_flash_timer = 0.0
 	puzzle_mgr.parse_puzzle()
@@ -538,11 +617,14 @@ func _client_ready(_claimed_peer_id: int) -> void:
 		return
 	if not NetworkManager.rate_limit_ok(peer_id, "client_ready", 1.0):
 		return
-	rpc_id(peer_id, "_full_state_sync", bulbs, _players_positions_array(), _players_combat_array(), enemy_mgr._build_enemy_snapshot(), level_timer, boss_spawn_evaluated, current_level_time_limit)
+	rpc_id(peer_id, "_full_state_sync", bulbs, _players_positions_array(), _players_combat_array(), enemy_mgr._build_enemy_snapshot(), level_timer, boss_spawn_evaluated, current_level_time_limit, {"gold": player_gold, "inventory": player_inventory, "equipped": player_equipped})
 
 @rpc("authority", "call_remote", "reliable")
-func _full_state_sync(new_bulbs: Array, new_positions: Array, new_combat: Array, enemy_snapshot: Array, new_level_timer: float, new_boss_spawn_evaluated: bool, new_level_time_limit: float) -> void:
+func _full_state_sync(new_bulbs: Array, new_positions: Array, new_combat: Array, enemy_snapshot: Array, new_level_timer: float, new_boss_spawn_evaluated: bool, new_level_time_limit: float, new_economy: Dictionary) -> void:
 	bulbs = new_bulbs
+	player_gold.assign(new_economy["gold"])
+	player_inventory.assign(new_economy["inventory"])
+	player_equipped.assign(new_economy["equipped"])
 	for player_index in range(players.size()):
 		var new_position: Array = new_positions[player_index]
 		var combat_entry: Dictionary = new_combat[player_index]
@@ -599,7 +681,7 @@ func _process(delta: float) -> void:
 
 	bulb_anim_time += delta
 	player_mgr._advance_player_animations(delta)
-	if not _is_inventory_open():
+	if not _is_modal_open():
 		# Mirrors Town.gd's equivalent guard in its own _tick_move_repeat --
 		# without this, holding a direction and then opening the inventory
 		# (which, unlike the pause menu, doesn't clear held keys on open)

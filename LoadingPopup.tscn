@@ -1,0 +1,57 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://LoadingPopup.gd" id="1_script"]
+
+[node name="LoadingPopup" type="CanvasLayer"]
+layer = 100
+visible = false
+script = ExtResource("1_script")
+
+[node name="Dim" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.55)
+
+[node name="LoadingPanel" type="Control" parent="Dim"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -84.0
+offset_right = 180.0
+offset_bottom = 84.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="LoadingArt" type="TextureRect" parent="Dim/LoadingPanel"]
+unique_name_in_owner = true
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+
+[node name="LoadingLabel" type="Label" parent="Dim/LoadingPanel"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 28.0
+offset_top = 38.0
+offset_right = 332.0
+offset_bottom = 130.0
+theme_override_colors/font_color = Color(0.24, 0.13, 0.1, 1)
+theme_override_font_sizes/font_size = 32
+text = "Loading..."
+horizontal_alignment = 1
+vertical_alignment = 1

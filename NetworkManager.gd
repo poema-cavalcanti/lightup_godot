@@ -54,6 +54,14 @@ var pending_puzzle_rows: PackedStringArray = []
 var pending_start_positions: Array = []
 var pending_peer_order: Array = []
 
+# Host only: the next-board generation Game was running when the level ended, handed over to the Town
+# (TownNet) so it keeps going there. Null otherwise.
+var prepared_job: GenerationJob = null
+
+# Joins background generation threads that scenes abandoned while they were still running.
+func _process(_delta: float) -> void:
+	GenerationJob.reap()
+
 func _ready() -> void:
 	multiplayer.peer_connected.connect(_on_peer_connected)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
@@ -96,6 +104,7 @@ func leave_game() -> void:
 	is_multiplayer = false
 	is_host = false
 	match_in_progress = false
+	SessionEconomy.carry = false
 	_last_request_msec.clear()
 	connected_peer_ids.clear()
 
@@ -309,32 +318,22 @@ func rate_limit_ok(peer_id: int, action: String, min_interval: float) -> bool:
 
 # --- Starting the match ---------------------------------------------------
 
-# Host only. Generates the puzzle, works out everyone's starting corner,
-# and tells every peer (itself included, via call_local) to load Game.tscn.
-func start_game(rows: int, cols: int, density: float) -> void:
+# Host only. Given the match's first board (see Lobby.MULTIPLAYER_STARTING_LEVEL), works out
+# everyone's starting corner and tells every peer (itself included, via call_local) to load Game.tscn.
+func start_game(puzzle_rows: PackedStringArray) -> void:
 	if not is_host:
 		return
-	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
-	rng.randomize()
-	var generation_result: Dictionary = LightUpGenerator.generate(rows, cols, density, rng)
-	var puzzle_rows: PackedStringArray
-	if generation_result["success"]:
-		puzzle_rows = generation_result["rows"]
-	else:
-		# exceedingly unlikely given how reliably the generator succeeds in
-		# testing, but fail safe rather than leave everyone hanging
-		puzzle_rows = PackedStringArray()
-		for row in range(rows):
-			puzzle_rows.append(".".repeat(cols))
-
 	var start_positions: Array = BoardUtil.corner_positions(puzzle_rows, connected_peer_ids.size())
 	match_in_progress = true
 	if using_steam:
 		SteamBridge.set_lobby_joinable(false)  # nobody new can join a running match
-	rpc("_begin_game", puzzle_rows, start_positions, connected_peer_ids)
+	rpc("_begin_game", puzzle_rows, start_positions, connected_peer_ids, false)
 
 @rpc("authority", "call_local", "reliable")
-func _begin_game(puzzle_rows: PackedStringArray, start_positions: Array, peer_order: Array) -> void:
+# keep_economy: true when coming back from the Town between levels (the match's gold/items carry on,
+# see SessionEconomy.gd); false for a fresh match from the lobby.
+func _begin_game(puzzle_rows: PackedStringArray, start_positions: Array, peer_order: Array, keep_economy: bool) -> void:
+	SessionEconomy.carry = keep_economy
 	pending_puzzle_rows = puzzle_rows
 	pending_start_positions = start_positions
 	pending_peer_order = peer_order

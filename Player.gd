@@ -161,7 +161,7 @@ func _damage_player(player_state: Dictionary, player_index: int, amount: int, is
 	if player_state["is_blocking"]:
 		effective_amount = 0 if is_ranged else int(round(amount * MELEE_BLOCK_DAMAGE_MULTIPLIER))
 	if not is_ranged and effective_amount > 0:
-		effective_amount = int(round(effective_amount * _get_melee_damage_multiplier()))
+		effective_amount = int(round(effective_amount * _get_melee_damage_multiplier(player_index)))
 	var new_health: int = max(0, player_state["health"] - effective_amount)
 	var new_is_defeated: bool = new_health <= 0
 	if NetworkManager.is_multiplayer:
@@ -169,15 +169,13 @@ func _damage_player(player_state: Dictionary, player_index: int, amount: int, is
 	else:
 		_apply_player_health_update(player_state, player_index, new_health, new_is_defeated)
 
-# Passive melee damage reduction from whatever's equipped in the "armor"
+# Passive melee damage reduction from whatever the damaged player has equipped in the "armor"
 # slot (see ItemData's "melee_damage_reduction" field) -- 1.0 = no
 # reduction. Stacks multiplicatively with the blocking reduction above
 # (applied after it, in _damage_player); never applies to ranged damage,
 # since armor here doesn't claim to stop that.
-func _get_melee_damage_multiplier() -> float:
-	if not CampaignManager.is_campaign_active:
-		return 1.0
-	var armor_item_id: String = CampaignManager.get_equipped_item_id("armor")
+func _get_melee_damage_multiplier(player_index: int) -> float:
+	var armor_item_id: String = game.loadout_mgr.equipped_item_id(player_index, "armor")
 	if armor_item_id == "":
 		return 1.0
 	var item: Dictionary = ItemData.get_item(armor_item_id)
@@ -193,9 +191,8 @@ func _apply_player_health_update(player_state: Dictionary, player_index: int, ne
 	player_state["is_defeated"] = new_is_defeated
 	if new_is_defeated and not was_defeated:
 		player_state["respawn_timer"] = 0.0
-		# Dying closes the inventory overlay (it only exists in a campaign, so
-		# it's null otherwise). Only for the local player, so a teammate going
-		# down in multiplayer can't yank it shut.
+		# Dying closes the inventory overlay. Only for the local player, so a
+		# teammate going down in multiplayer can't yank it shut.
 		if player_index == game.my_player_index and game.inventory_panel != null:
 			game.inventory_panel.close()
 	game.queue_redraw()
@@ -432,14 +429,11 @@ func _draw_players() -> void:
 			game.draw_arc(body_center, shield_radius, 0.0, TAU, 24, Color(0.45, 0.85, 1.0, (0.65 + 0.25 * pulse) * spawn_eased), 3.0)
 
 # Equipped armor's visual (e.g. a hat), drawn over the just-drawn body
-# sprite -- campaign-only (equipping doesn't exist elsewhere), and only
-# for the local player, since CampaignManager.equipped is a single global
-# slot map, not per-player (campaign is always singleplayer, so there's
-# only ever one player to apply it to anyway).
+# sprite -- for every player: in the campaign that's the one CampaignManager
+# slot map, elsewhere each player's own synced loadout (so teammates see
+# each other's hats).
 func _draw_equipped_armor_overlay(player_index: int, sheet_kind: String, frame_index: int, body_destination_rectangle: Rect2, alpha: float) -> void:
-	if not CampaignManager.is_campaign_active or player_index != game.my_player_index:
-		return
-	var armor_item_id: String = CampaignManager.get_equipped_item_id("armor")
+	var armor_item_id: String = game.loadout_mgr.equipped_item_id(player_index, "armor")
 	if armor_item_id == "":
 		return
 	# Left-facing reuses the "right" art -- the caller has already mirrored
