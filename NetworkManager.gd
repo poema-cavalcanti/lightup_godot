@@ -96,6 +96,7 @@ func leave_game() -> void:
 	is_multiplayer = false
 	is_host = false
 	match_in_progress = false
+	SessionEconomy.carry = false
 	_last_request_msec.clear()
 	connected_peer_ids.clear()
 
@@ -331,10 +332,13 @@ func start_game(rows: int, cols: int, density: float) -> void:
 	match_in_progress = true
 	if using_steam:
 		SteamBridge.set_lobby_joinable(false)  # nobody new can join a running match
-	rpc("_begin_game", puzzle_rows, start_positions, connected_peer_ids)
+	rpc("_begin_game", puzzle_rows, start_positions, connected_peer_ids, false)
 
 @rpc("authority", "call_local", "reliable")
-func _begin_game(puzzle_rows: PackedStringArray, start_positions: Array, peer_order: Array) -> void:
+# keep_economy: true when coming back from the Town between levels (the match's gold/items carry on,
+# see SessionEconomy.gd); false for a fresh match from the lobby.
+func _begin_game(puzzle_rows: PackedStringArray, start_positions: Array, peer_order: Array, keep_economy: bool) -> void:
+	SessionEconomy.carry = keep_economy
 	pending_puzzle_rows = puzzle_rows
 	pending_start_positions = start_positions
 	pending_peer_order = peer_order

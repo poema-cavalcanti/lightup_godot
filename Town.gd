@@ -25,6 +25,16 @@ extends Node2D
 # (its own 'I' key, open any time) lets the player review. No, or closing the
 # shop, animates the player back onto the tile below the door.
 #
+# MULTIPLAYER: the same town is shared by everyone in a multiplayer match
+# (reached from Game._go_to_town()). All of that lives in TownNet.gd; this
+# script only branches to it where the campaign's single-player behavior
+# differs (marked "net" below) and holds the @rpc wrappers, since RPCs have to
+# live on the node. In that mode the Town node also stands in for `game` as
+# far as ShopManager.gd and LoadoutManager.gd are concerned (player_gold,
+# player_inventory, player_equipped, my_player_index, players, was_solved and
+# the RPC entry points further down), so shopping and equipping behave exactly
+# as they do after a level.
+#
 # LAYOUT: the town art, the Yes/No dialog, the shop window and the inventory
 # overlay are all nodes in Town.tscn (the art and shop_background.png are
 # referenced directly, so both files must exist); each shop item is a
@@ -49,6 +59,12 @@ const TOWN_GRID: Array[String] = [
 const WALL_CHAR: String = "#"
 const DOOR_CHAR: String = "D"
 
+const SPAWN_ROW: int = 9
+const SPAWN_COL: int = 10
+const TownNetLogic := preload("res://TownNet.gd")
+const ShopLogic := preload("res://ShopManager.gd")
+const LoadoutLogic := preload("res://LoadoutManager.gd")
+
 const SHOP_CARD_SCENE: PackedScene = preload("res://ShopItemCard.tscn")
 const CONFIRM_PIXEL_SCALE: int = PixelButton.DEFAULT_PIXEL_SCALE # the confirm popup's panel, buttons and X all use this; its sizes in Town.tscn are multiples of it
 const SHOP_CARD_TEXT_LEFT_WITHOUT_ICON: float = 16.0 # where a card's text starts when the item has no icon (with one it's in the scene)
@@ -65,8 +81,8 @@ var shops: Array[Dictionary] = [
 	{"name": "Shields Shop", "prompt": "Enter the shields shop?", "door_row": 6, "door_col": 13},
 ]
 
-var player_row: int = 9
-var player_col: int = 10
+var player_row: int = SPAWN_ROW
+var player_col: int = SPAWN_COL
 var facing_direction: String = "up"
 var visual_position: Vector2 # tile-space (x=col, y=row), same convention Player.gd uses
 var animation_from: Vector2
@@ -80,6 +96,18 @@ var idle_frame_index: int = 0
 var move_repeater: MoveRepeater = MoveRepeater.new()
 
 var active_shop_index: int = -1 # which shop the open confirm/shop panel refers to
+
+# Multiplayer only (net is null in the campaign). The fields below are what
+# ShopManager / LoadoutManager read from their `game` -- see MULTIPLAYER above.
+var net: RefCounted = null
+var players: Array[Dictionary] = []
+var my_player_index: int = 0
+var player_gold: Array[int] = []
+var player_inventory: Array[Dictionary] = []
+var player_equipped: Array[Dictionary] = []
+var was_solved: bool = true # the town's shop is always open
+var shop_mgr := ShopLogic.new(self)
+var loadout_mgr := LoadoutLogic.new(self)
 
 # Popups and the town art, all nodes of Town.tscn.
 @onready var background: Sprite2D = %Background
@@ -110,6 +138,26 @@ func _ready() -> void:
 	PixelButton.apply(%YesButton, CONFIRM_PIXEL_SCALE, PixelButton.PARCHMENT_SHADOW_COLOR)
 	PixelButton.apply(%NoButton, CONFIRM_PIXEL_SCALE, PixelButton.PARCHMENT_SHADOW_COLOR)
 	%ShopCloseButton.pressed.connect(_on_shop_close_pressed)
+	if NetworkManager.is_multiplayer:
+		_setup_multiplayer()
+
+func _setup_multiplayer() -> void:
+	player_gold = SessionEconomy.gold
+	player_inventory = SessionEconomy.inventory
+	player_equipped = SessionEconomy.equipped
+	net = TownNetLogic.new(self)
+	net.setup()
+	shop_mgr.build_panel()  # the shared shop window replaces this scene's own ShopPanel node
+	shop_mgr.panel.closed.connect(net.on_shop_closed)
+	inventory_panel.can_open = func() -> bool: return not shop_mgr.is_open() and not confirm_canvas.visible
+	inventory_panel.get_inventory = loadout_mgr.my_inventory
+	inventory_panel.get_equipped = loadout_mgr.my_equipped_item_id
+	inventory_panel.do_equip = loadout_mgr.equip
+	inventory_panel.do_unequip = loadout_mgr.unequip
+
+func _exit_tree() -> void:
+	if net != null:
+		net.cleanup()
 
 func _process(delta: float) -> void:
 	_advance_animation(delta)
@@ -118,6 +166,9 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _advance_animation(delta: float) -> void:
+	if net != null:
+		net.advance(delta)
+		return
 	if animation_progress < 1.0:
 		animation_progress = min(animation_progress + delta / Constants.MOVE_ANIMATION_DURATION, 1.0)
 		var eased_progress: float = ease(animation_progress, -2.0)
@@ -155,9 +206,11 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_F11:
 			SettingsManager.toggle_fullscreen()
+		elif net != null and event.keycode == SettingsManager.get_key_binding("attack") and not _is_any_popup_open():
+			net.request_attack()
 
 func _is_any_popup_open() -> bool:
-	return confirm_canvas.visible or shop_canvas.visible or inventory_panel.is_open()
+	return confirm_canvas.visible or shop_canvas.visible or inventory_panel.is_open() or shop_mgr.is_open()
 
 # --- Hold-to-move: a hand-ported match for Player.gd's in-level movement --
 # --- (see Player.gd for the reasoning behind the two-phase repeat, the ----
@@ -176,7 +229,8 @@ func _handle_move_key_event(keycode: int, is_pressed: bool) -> void:
 func _tick_move_repeat(delta_time: float) -> void:
 	if _is_any_popup_open():
 		return
-	var delta: Array = move_repeater.tick(delta_time, animation_progress < 1.0, Constants.MOVE_ANIMATION_DURATION)
+	var hop_in_progress: bool = net.local_busy() if net != null else animation_progress < 1.0
+	var delta: Array = move_repeater.tick(delta_time, hop_in_progress, Constants.MOVE_ANIMATION_DURATION)
 	if not delta.is_empty():
 		_try_move(delta[0], delta[1])
 
@@ -186,6 +240,9 @@ func _clear_held_move_keys() -> void:
 # --- Grid movement: walls / doors / leaving town ---------------------------
 
 func _try_move(delta_row: int, delta_col: int) -> void:
+	if net != null:
+		net.request_move(delta_row, delta_col)
+		return
 	if animation_progress < 1.0:
 		return
 
@@ -246,10 +303,16 @@ func _open_confirm_panel(shop_index: int) -> void:
 
 func _on_confirm_yes_pressed() -> void:
 	confirm_canvas.visible = false
+	if net != null:
+		net.request_hidden(true)  # the shop opens once the host has hidden us (open_shop_panel_for_multiplayer)
+		return
 	_open_shop_panel(active_shop_index)
 
 func _on_confirm_no_pressed() -> void:
 	confirm_canvas.visible = false
+	if net != null:
+		net.request_move(1, 0)  # step back down off the door
+		return
 	var shop: Dictionary = shops[active_shop_index]
 	facing_direction = "down"
 	_move_to(shop["door_row"] + 1, shop["door_col"])
@@ -261,6 +324,11 @@ func _open_shop_panel(shop_index: int) -> void:
 	_refresh_shop_gold_label()
 	_populate_shop_items(shop_index)
 	shop_canvas.visible = true
+
+# Multiplayer: the host has hidden us, so open the shared shop window for the door we're on.
+func open_shop_panel_for_multiplayer() -> void:
+	var shop_name: String = shops[active_shop_index]["name"]
+	shop_mgr.panel.open(shop_name, ItemData.SHOP_ITEM_IDS.get(shop_name, []))
 
 func _refresh_shop_gold_label() -> void:
 	shop_gold_label.text = "Your gold: %d" % CampaignManager.gold
@@ -342,27 +410,32 @@ func _grid_origin() -> Vector2:
 # The town art itself is the Background node; this just draws the player on top
 # (the node is show_behind_parent, so it sits underneath what's drawn here).
 func _draw() -> void:
+	if net != null:
+		net.draw(_grid_origin())
+		return
 	_draw_player(_grid_origin())
 
 func _draw_player(grid_origin: Vector2) -> void:
 	var body_center: Vector2 = GridGeometry.tile_center_to_pixel(visual_position.y, visual_position.x, grid_origin, Constants.CELL_SIZE)
-
 	var is_moving: bool = animation_progress < 1.0
+	_draw_character(body_center, is_moving, animation_frame_index if is_moving else idle_frame_index, facing_direction, Constants.PLAYER_COLORS[0], CampaignManager.get_equipped_item_id("armor"))
+
+# One walker: body sprite (run sheet while hopping, idle sheet otherwise) in the given tint, plus
+# the armor overlay for armor_item_id ("" = none). Shared by the campaign's single player and
+# TownNet's many.
+func _draw_character(body_center: Vector2, is_moving: bool, active_frame_index: int, facing: String, tint: Color, armor_item_id: String) -> void:
 	var active_texture: Texture2D
-	var active_frame_index: int
 	# Which sheet kind is showing, for picking the matching equipped-armor
 	# overlay art and offset -- see Player.gd's _draw_players.
 	var overlay_kind: String
 	if is_moving:
 		active_texture = player_run_sheet_texture
-		active_frame_index = animation_frame_index
 		overlay_kind = "run"
 	else:
 		active_texture = player_idle_sheet_texture
-		active_frame_index = idle_frame_index
 		overlay_kind = "idle"
 
-	var source_direction: String = "right" if facing_direction == "left" else facing_direction
+	var source_direction: String = "right" if facing == "left" else facing
 	var direction_row: int = Constants.PLAYER_SHEET_DIRECTION_ROWS.get(source_direction, 0)
 	var source_rectangle: Rect2 = Rect2(
 		active_frame_index * Constants.PLAYER_SHEET_FRAME_WIDTH,
@@ -375,28 +448,25 @@ func _draw_player(grid_origin: Vector2) -> void:
 		body_center.x - sprite_size / 2.0, body_center.y - sprite_size / 2.0,
 		sprite_size, sprite_size
 	)
-	var flip_horizontally: bool = facing_direction == "left"
+	var flip_horizontally: bool = facing == "left"
 	if flip_horizontally:
 		# Same mirror-via-canvas-transform approach as Player.gd (see the
 		# comment there for why not a negative-width source rect): rects
 		# drawn while it's active are relative to body_center.
 		draw_set_transform(body_center, 0.0, Vector2(-1.0, 1.0))
 		destination_rectangle.position -= body_center
-	draw_texture_rect_region(active_texture, destination_rectangle, source_rectangle, Constants.PLAYER_COLORS[0])
-	_draw_equipped_armor_overlay(overlay_kind, active_frame_index, destination_rectangle)
+	draw_texture_rect_region(active_texture, destination_rectangle, source_rectangle, tint)
+	_draw_equipped_armor_overlay(armor_item_id, facing, overlay_kind, active_frame_index, destination_rectangle)
 	if flip_horizontally:
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 # Equipped armor's visual (e.g. a hat), drawn over the just-drawn body
 # sprite -- mirrors Player.gd's _draw_equipped_armor_overlay exactly (see
-# there for why the math is what it is), just without needing a
-# player_index/campaign-active check: Town.tscn is only ever reachable
-# from within an active campaign, and there's only ever one player in it.
-func _draw_equipped_armor_overlay(sheet_kind: String, frame_index: int, body_destination_rectangle: Rect2) -> void:
-	var armor_item_id: String = CampaignManager.get_equipped_item_id("armor")
+# there for why the math is what it is); the caller says whose armor it is.
+func _draw_equipped_armor_overlay(armor_item_id: String, facing: String, sheet_kind: String, frame_index: int, body_destination_rectangle: Rect2) -> void:
 	if armor_item_id == "":
 		return
-	var overlay_direction: String = "right" if facing_direction == "left" else facing_direction
+	var overlay_direction: String = "right" if facing == "left" else facing
 	var overlay_texture: Texture2D = ItemData.get_item_overlay_texture(armor_item_id, sheet_kind, overlay_direction)
 	if overlay_texture == null:
 		return
@@ -424,3 +494,70 @@ func _draw_equipped_armor_overlay(sheet_kind: String, frame_index: int, body_des
 	# No source flip needed here for left-facing: _draw_player has already
 	# mirrored the canvas around the body when facing left.
 	draw_texture_rect_region(overlay_texture, overlay_destination_rectangle, overlay_source_rectangle, Color(1, 1, 1, 1))
+
+# --- Multiplayer RPC entry points: the logic is in TownNet.gd / ShopManager.gd / LoadoutManager.gd ---
+
+@rpc("any_peer", "call_remote", "reliable")
+func _town_ready() -> void:
+	if net != null:
+		net._request_ready()
+
+@rpc("authority", "call_remote", "reliable")
+func _town_full_sync(snapshot: Array) -> void:
+	if net != null:
+		net._full_sync(snapshot)
+
+@rpc("any_peer", "call_remote", "reliable")
+func _town_request_move(player_index: int, delta_row: int, delta_col: int) -> void:
+	if net != null:
+		net._request_move(player_index, delta_row, delta_col)
+
+@rpc("authority", "call_local", "reliable")
+func _town_sync_move(player_index: int, row: int, col: int, facing: String) -> void:
+	if net != null:
+		net._sync_move(player_index, row, col, facing)
+
+@rpc("any_peer", "call_remote", "reliable")
+func _town_request_hidden(player_index: int, should_hide: bool) -> void:
+	if net != null:
+		net._request_hidden(player_index, should_hide)
+
+@rpc("authority", "call_local", "reliable")
+func _town_sync_hidden(player_index: int, should_hide: bool, row: int, col: int, facing: String) -> void:
+	if net != null:
+		net._sync_hidden(player_index, should_hide, row, col, facing)
+
+@rpc("any_peer", "call_remote", "reliable")
+func _town_request_attack(player_index: int) -> void:
+	if net != null:
+		net._request_attack(player_index)
+
+@rpc("authority", "call_local", "reliable")
+func _town_sync_hit(attacker_index: int, target_index: int, new_health: int, died: bool) -> void:
+	if net != null:
+		net._sync_hit(attacker_index, target_index, new_health, died)
+
+@rpc("authority", "call_local", "reliable")
+func _town_sync_departed(player_index: int) -> void:
+	if net != null:
+		net._sync_departed(player_index)
+
+@rpc("any_peer", "call_remote", "reliable")
+func _request_purchase(player_index: int, item_id: String) -> void:
+	shop_mgr._request_purchase(player_index, item_id)
+
+@rpc("authority", "call_local", "reliable")
+func _sync_purchase(player_index: int, item_id: String, new_gold: int, new_quantity: int) -> void:
+	shop_mgr._sync_purchase(player_index, item_id, new_gold, new_quantity)
+
+@rpc("authority", "call_remote", "reliable")
+func _purchase_rejected(item_id: String, message: String) -> void:
+	shop_mgr._purchase_rejected(item_id, message)
+
+@rpc("any_peer", "call_remote", "reliable")
+func _request_equip(player_index: int, slot: String, item_id: String) -> void:
+	loadout_mgr._request_equip(player_index, slot, item_id)
+
+@rpc("authority", "call_local", "reliable")
+func _sync_equipped(player_index: int, slot: String, item_id: String) -> void:
+	loadout_mgr._sync_equipped(player_index, slot, item_id)

@@ -14,6 +14,7 @@ extends CanvasLayer
 # ---------------------------------------------------------------------------
 
 signal purchase_requested(item_id: String)
+signal closed  # the window went from open to closed (X button, Escape, or the owner closing it)
 
 const CARD_SCENE: PackedScene = preload("res://ShopItemCard.tscn")
 const CARD_TEXT_LEFT_WITHOUT_ICON: float = 16.0  # where a card's text starts when the item has no icon (with one it's in the scene)
@@ -43,7 +44,10 @@ func open(title: String, item_ids: Array) -> void:
 	visible = true
 
 func close() -> void:
+	var was_open: bool = visible
 	visible = false
+	if was_open:
+		closed.emit()
 
 # Re-reads gold and owned counts -- call after anything that may have changed them.
 func refresh() -> void:

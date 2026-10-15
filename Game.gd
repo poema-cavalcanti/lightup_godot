@@ -276,14 +276,20 @@ func _ready() -> void:
 		players.clear()
 		players.append(player_mgr._create_player_state(0, 0))
 
-	player_gold.clear()
-	player_gold.resize(players.size())
-	player_gold.fill(0)
-	player_inventory.clear()
-	player_equipped.clear()
-	for _player_index in range(players.size()):
-		player_inventory.append({})
-		player_equipped.append(LoadoutLogic.empty_loadout())
+	if SessionEconomy.take(players.size()):
+		# Back from the multiplayer Town: carry on with the match's gold, items and gear.
+		player_gold = SessionEconomy.gold
+		player_inventory = SessionEconomy.inventory
+		player_equipped = SessionEconomy.equipped
+	else:
+		player_gold.clear()
+		player_gold.resize(players.size())
+		player_gold.fill(0)
+		player_inventory.clear()
+		player_equipped.clear()
+		for _player_index in range(players.size()):
+			player_inventory.append({})
+			player_equipped.append(LoadoutLogic.empty_loadout())
 
 	puzzle_mgr.parse_puzzle()
 
@@ -505,7 +511,17 @@ func _sync_equipped(player_index: int, slot: String, item_id: String) -> void:
 func _on_continue_pressed() -> void:
 	if not puzzle_mgr._is_solved():
 		return
+	if NetworkManager.is_multiplayer:
+		if multiplayer.is_server():
+			rpc("_go_to_town")  # multiplayer: the Town comes between levels; it generates the next board itself
+		return
 	_advance_to_new_puzzle()
+
+# Multiplayer, every peer: off to the shared Town (Town.gd) with this match's economy.
+@rpc("authority", "call_local", "reliable")
+func _go_to_town() -> void:
+	SessionEconomy.store(player_gold, player_inventory, player_equipped)
+	get_tree().change_scene_to_file(Constants.SCENE_TOWN)
 
 func _advance_to_new_puzzle() -> void:
 	if NetworkManager.is_multiplayer and not multiplayer.is_server():
