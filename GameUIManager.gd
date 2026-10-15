@@ -67,6 +67,8 @@ func _build_ui() -> void:
 		game.inventory_panel.do_unequip = game.loadout_mgr.unequip
 	game.add_child(game.inventory_panel)
 
+	game.hud_mgr._build_minimap()
+
 func _resize_window() -> void:
 	# Sets the OS window to fit a sensible minimum play area, then lays
 	# everything out. The play area itself always stretches to fill

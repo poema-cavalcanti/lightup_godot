@@ -1,5 +1,5 @@
 extends RefCounted
-# In-play HUD overlays: the scrolling-viewport math, the minimap, the
+# In-play HUD overlays: the smooth scrolling camera, the minimap, the
 # Check Answer error flash, timer-bonus popups,
 # tutorial hint bubbles, the win animation, and the level-timer tick/format.
 # Split out of GameUIManager.gd, which kept window sizing/layout, the
@@ -23,25 +23,71 @@ const TIMER_BONUS_POPUP_DURATION: float = 1.2
 const MINIMAP_SIZE: float = 150.0
 
 # ---------------------------------------------------------------------------
-# Scrolling viewport -- shows as much of the puzzle as fits the current
-# window, centered on the local player, clamped so the view never scrolls
-# past the puzzle's edges. game.offset_x/offset_y keep their old meaning
-# (the pixel origin that col/row 0 would sit at, however far off-screen)
-# so every other draw call (players, enemies, projectiles, hints, popups)
-# keeps working unchanged.
+# Scrolling viewport -- a smooth camera. It keeps the local player in the
+# middle of the play area and scrolls the board under them a pixel at a time
+# (never a whole tile at once), clamped so the view never scrolls past the
+# puzzle's edges; near an edge the player drifts off-center instead of the
+# camera showing empty space. game.offset_x/offset_y keep their old meaning
+# (the pixel origin that col/row 0 would sit at, however far off-screen) so
+# every other draw call (players, enemies, projectiles, hints, popups) keeps
+# working unchanged.
+#
+# The camera follows the player's *visual* position -- the same eased value the
+# sprite is drawn at, which moves between tiles over MOVE_ANIMATION_DURATION --
+# not the tile they have logically stepped to. (It used to follow the tile, so
+# the whole view jumped a full tile the instant a step began while the sprite
+# was still sliding.) Tiles at the edge of the play area are therefore drawn
+# part-way, and Game clips its drawing to the play area (see _apply_play_clip).
 # ---------------------------------------------------------------------------
 
+# How closely the camera trails the player, as a time constant in seconds. 0 keeps the player
+# locked dead-center (the view moves exactly as the sprite does). A little (0.05-0.1) smooths
+# out the stop-start of chained steps -- each step eases in and out -- at the cost of the
+# player drifting slightly off-center while moving.
+const CAMERA_SMOOTH_TIME: float = 0.0
+# A jump of more than this many tiles (respawn, reset, a new puzzle) snaps the camera instead of gliding.
+const CAMERA_SNAP_DISTANCE: float = 3.0
+
+var camera_center: Vector2 = Vector2.ZERO  # board tile coordinates (x = col, y = row) of the point the view is centered on
+var camera_initialized: bool = false
+
+# Each frame (Game._process): move the camera toward the local player.
+func _update_camera(delta: float) -> void:
+	var target: Vector2 = _camera_target()
+	if not camera_initialized or camera_center.distance_to(target) > CAMERA_SNAP_DISTANCE:
+		camera_center = target
+		camera_initialized = true
+	elif CAMERA_SMOOTH_TIME <= 0.0:
+		camera_center = target
+	else:
+		camera_center = target + (camera_center - target) * exp(-delta / CAMERA_SMOOTH_TIME)
+	if minimap_canvas != null:
+		minimap_canvas.queue_redraw()
+
+func _camera_target() -> Vector2:
+	if game.my_player_index >= 0 and game.my_player_index < game.players.size():
+		var visual_position: Vector2 = game.players[game.my_player_index]["visual_position"]  # top-left of the tile, in tile units
+		return visual_position + Vector2(0.5, 0.5)
+	return Vector2(game.cols, game.rows) * 0.5
+
+# Where the view's top-left sits on one axis, in "extended" tile units (the board plus its border
+# ring): centered on `center`, held inside the grid, and centered in the leftover space if the grid
+# is smaller than the view. Snapped to whole screen pixels so tile art doesn't shimmer.
+func _camera_axis(center: float, grid_size: float, view_size: float) -> float:
+	var start: float
+	if grid_size <= view_size:
+		start = (grid_size - view_size) / 2.0
+	else:
+		start = clampf(center - view_size / 2.0, 0.0, grid_size - view_size)
+	return roundf(start * Constants.CELL_SIZE) / Constants.CELL_SIZE
+
 func _compute_view_window() -> void:
+	if not camera_initialized:
+		_update_camera(0.0)  # the very first draw can come before the first _process
 	var viewport_size: Vector2 = game.get_viewport_rect().size
 	var play_width: float = max(Constants.CELL_SIZE, viewport_size.x - game.MARGIN * 2)
 	var play_height: float = max(Constants.CELL_SIZE, viewport_size.y - game.HUD_HEIGHT - game.MARGIN)
-
-	var focus_row: int = 0
-	var focus_col: int = 0
-	if game.my_player_index >= 0 and game.my_player_index < game.players.size():
-		var focus_player: Dictionary = game.players[game.my_player_index]
-		focus_row = focus_player["row"]
-		focus_col = focus_player["col"]
+	_apply_play_clip(Rect2(game.MARGIN, game.HUD_HEIGHT, play_width, play_height))
 
 	# The stone border (if any) is treated as extra rows/cols of the world: the
 	# camera scrolls over a grid `border_cells` bigger on every side, with the
@@ -50,31 +96,44 @@ func _compute_view_window() -> void:
 	# border only appears as the outermost row/col once the camera reaches that
 	# edge. With no border art border_cells is 0 and this is the plain board.
 	var border_cells: int = game._border_cells()
-	var view_window: Dictionary = GridGeometry.compute_view_window(
-		game.rows + border_cells * 2, game.cols + border_cells * 2, Constants.CELL_SIZE,
-		focus_row + border_cells, focus_col + border_cells, play_width, play_height)
-	var ext_row_start: int = view_window["view_row_start"]
-	var ext_col_start: int = view_window["view_col_start"]
-	var ext_row_end: int = ext_row_start + view_window["view_rows"]  # exclusive
-	var ext_col_end: int = ext_col_start + view_window["view_cols"]  # exclusive
+	var view_width: float = play_width / Constants.CELL_SIZE   # in tiles, fractional
+	var view_height: float = play_height / Constants.CELL_SIZE
+	var ext_cols: int = game.cols + border_cells * 2
+	var ext_rows: int = game.rows + border_cells * 2
+	var camera_x: float = _camera_axis(camera_center.x + border_cells, ext_cols, view_width)
+	var camera_y: float = _camera_axis(camera_center.y + border_cells, ext_rows, view_height)
 
 	# Visible range in board coordinates, including the border ring (may be
-	# -1 / rows / cols) -- what _draw_border uses...
+	# -1 / rows / cols) and any partly-visible edge tiles -- what _draw_border
+	# uses...
+	var ext_col_start: int = maxi(0, floori(camera_x))
+	var ext_row_start: int = maxi(0, floori(camera_y))
+	var ext_col_end: int = mini(ext_cols, ceili(camera_x + view_width))  # exclusive
+	var ext_row_end: int = mini(ext_rows, ceili(camera_y + view_height))
 	game.border_first_row = ext_row_start - border_cells
 	game.border_last_row = ext_row_end - 1 - border_cells
 	game.border_first_col = ext_col_start - border_cells
 	game.border_last_col = ext_col_end - 1 - border_cells
 	# ...and the same range clamped to real board cells, which is what every
-	# other consumer of view_* (cell drawing, minimap, banners) expects.
+	# other consumer of view_* (cell drawing, banners) expects.
 	game.view_row_start = maxi(0, game.border_first_row)
 	game.view_col_start = maxi(0, game.border_first_col)
 	game.view_rows = mini(game.rows, game.border_last_row + 1) - game.view_row_start
 	game.view_cols = mini(game.cols, game.border_last_col + 1) - game.view_col_start
+	# The exact (fractional) camera rectangle in board coordinates, for the minimap's highlight.
+	game.camera_view_rect = Rect2(camera_x - border_cells, camera_y - border_cells, view_width, view_height).intersection(Rect2(0, 0, game.cols, game.rows))
 
-	# Center the (possibly smaller-than-available) visible area within the
-	# leftover space, rather than pinning it to the play area's top-left.
-	game.offset_x = int(view_window["extra_x"] - (ext_col_start - border_cells) * Constants.CELL_SIZE)
-	game.offset_y = int(game.HUD_HEIGHT + view_window["extra_y"] - game.MARGIN - (ext_row_start - border_cells) * Constants.CELL_SIZE)
+	game.offset_x = roundi((border_cells - camera_x) * Constants.CELL_SIZE)
+	game.offset_y = roundi(game.HUD_HEIGHT - game.MARGIN + (border_cells - camera_y) * Constants.CELL_SIZE)
+
+# Everything Game draws is cut off at the play area, so partly-visible edge tiles (and sprites
+# overhanging them) stop at its edge instead of spilling over the HUD strip. Same mechanism as a
+# Control's clip_contents. The minimap, which lives in the HUD strip, is drawn from its own node
+# (see _build_minimap) so it isn't clipped.
+func _apply_play_clip(play_rect: Rect2) -> void:
+	var canvas_item: RID = game.get_canvas_item()
+	RenderingServer.canvas_item_set_clip(canvas_item, true)
+	RenderingServer.canvas_item_set_custom_rect(canvas_item, true, play_rect)
 
 # ---------------------------------------------------------------------------
 # Minimap -- the whole puzzle at a glance, top-right of the HUD strip, in
@@ -82,6 +141,18 @@ func _compute_view_window() -> void:
 # with a highlight rectangle for the current scroll window and a dot per
 # player so it updates live as anyone moves.
 # ---------------------------------------------------------------------------
+
+var minimap_canvas: Node2D = null  # the minimap draws on this, not on Game, so Game's play-area clip doesn't cut it off
+
+# Called once from GameUIManager._build_ui(): a CanvasLayer of its own (so it's outside Game's clipped
+# canvas item) holding a node that draws the minimap.
+func _build_minimap() -> void:
+	var minimap_layer: CanvasLayer = CanvasLayer.new()
+	minimap_layer.layer = 1
+	minimap_canvas = Node2D.new()
+	minimap_layer.add_child(minimap_canvas)
+	minimap_canvas.draw.connect(_draw_minimap)
+	game.add_child(minimap_layer)
 
 func _draw_minimap() -> void:
 	var viewport_size: Vector2 = game.get_viewport_rect().size
@@ -96,21 +167,21 @@ func _draw_minimap() -> void:
 			var cell_rect: Rect2 = Rect2(origin + Vector2(col, row) * cell_size, Vector2(cell_size, cell_size))
 			var cell_data: Dictionary = game.grid[row][col]
 			if cell_data["type"] == Constants.CellType.BLACK:
-				game.draw_rect(cell_rect, Color(0.13, 0.13, 0.16))
+				minimap_canvas.draw_rect(cell_rect, Color(0.13, 0.13, 0.16))
 				if cell_data["number"] >= 0 and cell_size >= 8.0:
-					game.draw_string(game.font, cell_rect.position + Vector2(cell_size * 0.2, cell_size * 0.8), str(cell_data["number"]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(cell_size * 0.8), Color.WHITE)
+					minimap_canvas.draw_string(game.font, cell_rect.position + Vector2(cell_size * 0.2, cell_size * 0.8), str(cell_data["number"]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(cell_size * 0.8), Color.WHITE)
 			else:
 				var tint: Color = Color(1, 0.93, 0.55) if game.lit[row][col] else Color(0.9, 0.9, 0.9)
-				game.draw_rect(cell_rect, tint)
+				minimap_canvas.draw_rect(cell_rect, tint)
 
-	game.draw_rect(Rect2(origin, map_size), Color(0.114, 0.11, 0.169, 1.0), false, 2.0)
+	minimap_canvas.draw_rect(Rect2(origin, map_size), Color(0.114, 0.11, 0.169, 1.0), false, 2.0)
 
-	var view_rect: Rect2 = Rect2(origin + Vector2(game.view_col_start, game.view_row_start) * cell_size, Vector2(game.view_cols, game.view_rows) * cell_size)
-	game.draw_rect(view_rect, Color(1, 1, 1, 0.9), false, 2.0)
+	var view_rect: Rect2 = Rect2(origin + game.camera_view_rect.position * cell_size, game.camera_view_rect.size * cell_size)
+	minimap_canvas.draw_rect(view_rect, Color(1, 1, 1, 0.9), false, 2.0)
 
 	for player_state: Dictionary in game.players:
 		var dot_center: Vector2 = origin + Vector2(player_state["col"] + 0.5, player_state["row"] + 0.5) * cell_size
-		game.draw_circle(dot_center, max(2.0, cell_size * 0.3), Color(0.2, 0.6, 1.0))
+		minimap_canvas.draw_circle(dot_center, max(2.0, cell_size * 0.3), Color(0.2, 0.6, 1.0))
 
 # ---------------------------------------------------------------------------
 # Win animation -- a confetti burst + "SOLVED!" banner, triggered once on
@@ -274,7 +345,8 @@ func _draw_win_animation() -> void:
 	var banner_font_size: int = int(48 * banner_scale)
 	var banner_text: String = "SOLVED!"
 	var text_size: Vector2 = game.font.get_string_size(banner_text, HORIZONTAL_ALIGNMENT_LEFT, -1, banner_font_size)
-	var board_center: Vector2 = game._tile_to_pixel(game.view_row_start + game.view_rows / 2.0, game.view_col_start + game.view_cols / 2.0)
+	var viewport_size: Vector2 = game.get_viewport_rect().size
+	var board_center: Vector2 = Vector2(viewport_size.x / 2.0, game.HUD_HEIGHT + max(Constants.CELL_SIZE, viewport_size.y - game.HUD_HEIGHT - game.MARGIN) / 2.0)  # middle of the play area
 	var text_position: Vector2 = board_center + Vector2(-text_size.x / 2.0, text_size.y / 4.0)
 	game.draw_string(game.font, text_position + Vector2(2, 2), banner_text, HORIZONTAL_ALIGNMENT_LEFT, -1, banner_font_size, Color(0, 0, 0, banner_progress * 0.5))
 	game.draw_string(game.font, text_position, banner_text, HORIZONTAL_ALIGNMENT_LEFT, -1, banner_font_size, Color(0.2, 0.8, 0.3, banner_progress))

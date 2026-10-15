@@ -51,7 +51,6 @@ const DEFAULT_JOIN_ADDRESS: String = "127.0.0.1"
 var current_view: View = View.CHOICE
 var use_steam: bool = false  # true = host/join through Steam; false = LAN / direct IP
 
-@onready var back_button: Button = %BackButton
 @onready var choice_view: Control = %ChoiceView
 @onready var host_view: Control = %HostView
 @onready var join_view: Control = %JoinView
@@ -112,9 +111,6 @@ func _show_view(view: View) -> void:
 	host_view.visible = view == View.HOST_WAITING
 	join_view.visible = view == View.JOIN_ENTRY
 	client_view.visible = view == View.CLIENT_WAITING
-	# Only the choice and join screens have a Back button; while hosting or
-	# connected, the Cancel/Leave buttons do that job (they leave the game).
-	back_button.visible = view == View.CHOICE or view == View.JOIN_ENTRY
 
 	match view:
 		View.CHOICE:
@@ -236,8 +232,11 @@ func _on_leave_pressed() -> void:
 	NetworkManager.leave_game()
 	_show_view(View.CHOICE)
 
-# Overrides MenuScreen's default: don't leave a half-open session or Steam
-# lobby behind when backing out to the main menu.
+# Back always means "previous screen": from the Multiplayer menu that's the main
+# menu; from Join, Hosting or Connected it's the Multiplayer menu, after leaving
+# whatever session or join attempt was open.
 func _on_back_pressed() -> void:
-	NetworkManager.leave_game()
-	super._on_back_pressed()
+	if current_view == View.CHOICE:
+		super._on_back_pressed()
+	else:
+		_on_leave_pressed()

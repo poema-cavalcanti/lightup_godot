@@ -188,6 +188,7 @@ func _tile_center_to_pixel(row: float, col: float) -> Vector2:
 # --- enough to fill the screen, centered on the local player, and clamped --
 # --- to the puzzle's edges. Recomputed every _draw() call. ---
 var view_col_start: int = 0
+var camera_view_rect: Rect2 = Rect2()  # exact camera window in board coordinates (fractional), set by HUDManager._compute_view_window()
 var view_row_start: int = 0
 var view_cols: int = 0
 var view_rows: int = 0
@@ -681,6 +682,7 @@ func _process(delta: float) -> void:
 
 	bulb_anim_time += delta
 	player_mgr._advance_player_animations(delta)
+	hud_mgr._update_camera(delta)  # after the player's hop has advanced, so the view follows where the sprite is drawn
 	if not _is_modal_open():
 		# Mirrors Town.gd's equivalent guard in its own _tick_move_repeat --
 		# without this, holding a direction and then opening the inventory
