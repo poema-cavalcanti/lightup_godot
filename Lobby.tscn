@@ -1,98 +1,160 @@
 [gd_scene format=3 uid="uid://bftbvcpr5ljva"]
 
 [ext_resource type="Script" uid="uid://cpoygqd532dgm" path="res://Lobby.gd" id="1"]
+[ext_resource type="Theme" uid="uid://cdr1dnof7psgh" path="res://MenuTheme.tres" id="99_menutheme"]
+[ext_resource type="Script" path="res://LobbySlots.gd" id="3_slots"]
 
-[node name="Lobby" type="Control" unique_id=1303005690]
+[node name="Lobby" type="Control" unique_id=246511401]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("99_menutheme")
 script = ExtResource("1")
 
-[node name="BackButton" type="Button" parent="." unique_id=1220196970]
+[node name="BackButton" type="Button" parent="." unique_id=1432462157]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 20.0
 offset_top = 16.0
-offset_right = 140.0
-offset_bottom = 56.0
+offset_right = 170.0
+offset_bottom = 72.0
 text = "Back"
 
-[node name="ChoiceView" type="VBoxContainer" parent="." unique_id=487388445]
+[node name="Slots" type="Control" parent="."]
 unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -420.0
+offset_top = 76.0
+offset_right = 420.0
+offset_bottom = 376.0
+grow_horizontal = 2
+mouse_filter = 2
+script = ExtResource("3_slots")
+
+[node name="ChoiceView" type="Control" parent="." unique_id=1876336531]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TitleLabel" type="Label" parent="ChoiceView" unique_id=1816294773]
+layout_mode = 0
+offset_left = 190.0
+offset_top = 16.0
+offset_right = 800.0
+offset_bottom = 72.0
+theme_override_font_sizes/font_size = 32
+text = "Multiplayer"
+vertical_alignment = 1
+
+[node name="Column" type="VBoxContainer" parent="ChoiceView" unique_id=1583953401]
 custom_minimum_size = Vector2(340, 0)
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -170.0
-offset_top = 180.0
+offset_top = 150.0
 offset_right = 170.0
-offset_bottom = 460.0
+offset_bottom = 450.0
 grow_horizontal = 2
 theme_override_constants/separation = 14
 
-[node name="TitleLabel" type="Label" parent="ChoiceView" unique_id=1211513578]
+[node name="NameLabel" type="Label" parent="ChoiceView/Column"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Multiplayer"
+theme_override_font_sizes/font_size = 14
+text = "Your name"
+horizontal_alignment = 1
 
-[node name="HostButton" type="Button" parent="ChoiceView" unique_id=1148147832]
-custom_minimum_size = Vector2(220, 44)
+[node name="NameInput" type="LineEdit" parent="ChoiceView/Column"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 40)
 layout_mode = 2
-size_flags_horizontal = 0
+size_flags_horizontal = 4
+placeholder_text = "Enter a name"
+alignment = 1
+max_length = 16
+
+[node name="HostButton" type="Button" parent="ChoiceView/Column" unique_id=677170597]
+custom_minimum_size = Vector2(260, 56)
+layout_mode = 2
+size_flags_horizontal = 4
 text = "Host Game"
 
-[node name="JoinButton" type="Button" parent="ChoiceView" unique_id=2015742321]
-custom_minimum_size = Vector2(220, 44)
+[node name="JoinButton" type="Button" parent="ChoiceView/Column" unique_id=1709477629]
+custom_minimum_size = Vector2(260, 56)
 layout_mode = 2
-size_flags_horizontal = 0
+size_flags_horizontal = 4
 text = "Join Game"
 
-[node name="NetworkButton" type="Button" parent="ChoiceView" unique_id=2020311033]
+[node name="NetworkButton" type="Button" parent="ChoiceView/Column" unique_id=1340169290]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(260, 36)
+custom_minimum_size = Vector2(320, 56)
 layout_mode = 2
-size_flags_horizontal = 0
+size_flags_horizontal = 4
 text = "Network: LAN / direct IP"
 
-[node name="ChoiceStatusLabel" type="Label" parent="ChoiceView" unique_id=1174358844]
+[node name="ChoiceStatusLabel" type="Label" parent="ChoiceView/Column" unique_id=976955496]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(340, 60)
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
+horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="HostView" type="VBoxContainer" parent="." unique_id=490347328]
+[node name="HostView" type="Control" parent="." unique_id=2005861432]
 unique_name_in_owner = true
 visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TitleLabel" type="Label" parent="HostView" unique_id=726478474]
+layout_mode = 0
+offset_left = 190.0
+offset_top = 16.0
+offset_right = 800.0
+offset_bottom = 72.0
+theme_override_font_sizes/font_size = 32
+text = "Hosting"
+vertical_alignment = 1
+
+[node name="Column" type="VBoxContainer" parent="HostView" unique_id=1332546980]
 custom_minimum_size = Vector2(340, 0)
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -170.0
-offset_top = 180.0
+offset_top = 392.0
 offset_right = 170.0
-offset_bottom = 534.0
+offset_bottom = 692.0
 grow_horizontal = 2
 theme_override_constants/separation = 14
 
-[node name="TitleLabel" type="Label" parent="HostView" unique_id=2000542701]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Hosting"
-
-[node name="AddressLabel" type="Label" parent="HostView" unique_id=538004660]
+[node name="AddressLabel" type="Label" parent="HostView/Column" unique_id=1167881693]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Your LAN address: {ip}
 Port: {port}"
 
-[node name="HintLabel" type="Label" parent="HostView" unique_id=1528818070]
+[node name="HintLabel" type="Label" parent="HostView/Column" unique_id=1337677796]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(340, 40)
 layout_mode = 2
@@ -101,126 +163,142 @@ text = "Share this with up to 3 friends on your network.
 For remote friends, use a private network (e.g. Tailscale) rather than port-forwarding."
 autowrap_mode = 2
 
-[node name="PlayerRow" type="HBoxContainer" parent="HostView" unique_id=2727763]
+[node name="PlayerRow" type="HBoxContainer" parent="HostView/Column" unique_id=785025922]
 layout_mode = 2
+alignment = 1
 
-[node name="HostPlayerListLabel" type="Label" parent="HostView/PlayerRow" unique_id=1373771303]
+[node name="InviteButton" type="Button" parent="HostView/Column/PlayerRow" unique_id=2114896259]
 unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 16
-text = "Connected (1/4):
-Player 1 (Host)  <- you"
-
-[node name="InviteButton" type="Button" parent="HostView/PlayerRow" unique_id=313141780]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 36)
+custom_minimum_size = Vector2(190, 56)
 layout_mode = 2
 size_flags_vertical = 0
 text = "Invite Friends"
 
-[node name="Buttons" type="HBoxContainer" parent="HostView" unique_id=687370372]
+[node name="Buttons" type="HBoxContainer" parent="HostView/Column" unique_id=596651785]
 layout_mode = 2
+size_flags_horizontal = 4
 theme_override_constants/separation = 10
 
-[node name="StartButton" type="Button" parent="HostView/Buttons" unique_id=1619452999]
-custom_minimum_size = Vector2(160, 44)
+[node name="StartButton" type="Button" parent="HostView/Column/Buttons" unique_id=252900589]
+custom_minimum_size = Vector2(200, 56)
 layout_mode = 2
 text = "Start Game"
 
-[node name="CancelButton" type="Button" parent="HostView/Buttons" unique_id=2143306366]
-custom_minimum_size = Vector2(120, 44)
+[node name="CancelButton" type="Button" parent="HostView/Column/Buttons" unique_id=1695402394]
+custom_minimum_size = Vector2(160, 56)
 layout_mode = 2
 text = "Cancel"
 
-[node name="JoinView" type="VBoxContainer" parent="." unique_id=1407629285]
+[node name="JoinView" type="Control" parent="." unique_id=1424363095]
 unique_name_in_owner = true
 visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TitleLabel" type="Label" parent="JoinView" unique_id=742265305]
+layout_mode = 0
+offset_left = 190.0
+offset_top = 16.0
+offset_right = 800.0
+offset_bottom = 72.0
+theme_override_font_sizes/font_size = 32
+text = "Join Game"
+vertical_alignment = 1
+
+[node name="Column" type="VBoxContainer" parent="JoinView" unique_id=542672130]
 custom_minimum_size = Vector2(340, 0)
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -170.0
-offset_top = 180.0
+offset_top = 150.0
 offset_right = 170.0
 offset_bottom = 450.0
 grow_horizontal = 2
 theme_override_constants/separation = 14
 
-[node name="TitleLabel" type="Label" parent="JoinView" unique_id=649015536]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Join Game"
-
-[node name="InstructionLabel" type="Label" parent="JoinView" unique_id=105487664]
+[node name="InstructionLabel" type="Label" parent="JoinView/Column" unique_id=56253819]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Host's LAN address:"
+horizontal_alignment = 1
 
-[node name="IpInput" type="LineEdit" parent="JoinView" unique_id=1964395454]
+[node name="IpInput" type="LineEdit" parent="JoinView/Column" unique_id=780659337]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(220, 32)
 layout_mode = 2
-size_flags_horizontal = 0
+size_flags_horizontal = 4
 text = "127.0.0.1"
 
-[node name="ConnectButton" type="Button" parent="JoinView" unique_id=1895360936]
-custom_minimum_size = Vector2(140, 40)
+[node name="ConnectButton" type="Button" parent="JoinView/Column" unique_id=1446280131]
+custom_minimum_size = Vector2(180, 56)
 layout_mode = 2
-size_flags_horizontal = 0
+size_flags_horizontal = 4
 text = "Connect"
 
-[node name="StatusLabel" type="Label" parent="JoinView" unique_id=799753169]
+[node name="StatusLabel" type="Label" parent="JoinView/Column" unique_id=1822364644]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(340, 50)
 layout_mode = 2
+horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="ClientView" type="VBoxContainer" parent="." unique_id=1842518316]
+[node name="ClientView" type="Control" parent="." unique_id=929319519]
 unique_name_in_owner = true
 visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TitleLabel" type="Label" parent="ClientView" unique_id=683260418]
+layout_mode = 0
+offset_left = 190.0
+offset_top = 16.0
+offset_right = 800.0
+offset_bottom = 72.0
+theme_override_font_sizes/font_size = 32
+text = "Connected"
+vertical_alignment = 1
+
+[node name="Column" type="VBoxContainer" parent="ClientView" unique_id=1836579317]
 custom_minimum_size = Vector2(340, 0)
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -170.0
-offset_top = 180.0
+offset_top = 392.0
 offset_right = 170.0
-offset_bottom = 400.0
+offset_bottom = 692.0
 grow_horizontal = 2
 theme_override_constants/separation = 14
 
-[node name="TitleLabel" type="Label" parent="ClientView" unique_id=327637792]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Connected"
-
-[node name="ClientPlayerListLabel" type="Label" parent="ClientView" unique_id=1409993619]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 16
-text = "Connected (2/4):
-Player 1 (Host)
-Player 2  <- you"
-
-[node name="WaitingLabel" type="Label" parent="ClientView" unique_id=1196795510]
+[node name="WaitingLabel" type="Label" parent="ClientView/Column" unique_id=246279306]
 layout_mode = 2
 text = "Waiting for the host to start the game..."
 
-[node name="LeaveButton" type="Button" parent="ClientView" unique_id=1961872034]
-custom_minimum_size = Vector2(120, 40)
+[node name="LeaveButton" type="Button" parent="ClientView/Column" unique_id=1008016309]
+custom_minimum_size = Vector2(160, 56)
 layout_mode = 2
-size_flags_horizontal = 0
+size_flags_horizontal = 4
 text = "Leave"
 
 [connection signal="pressed" from="BackButton" to="." method="_on_back_pressed"]
-[connection signal="pressed" from="ChoiceView/HostButton" to="." method="_on_host_pressed"]
-[connection signal="pressed" from="ChoiceView/JoinButton" to="." method="_on_join_pressed"]
-[connection signal="pressed" from="ChoiceView/NetworkButton" to="." method="_on_network_toggle_pressed"]
-[connection signal="pressed" from="HostView/PlayerRow/InviteButton" to="." method="_on_invite_pressed"]
-[connection signal="pressed" from="HostView/Buttons/StartButton" to="." method="_on_start_pressed"]
-[connection signal="pressed" from="HostView/Buttons/CancelButton" to="." method="_on_leave_pressed"]
-[connection signal="pressed" from="JoinView/ConnectButton" to="." method="_on_connect_pressed"]
-[connection signal="pressed" from="ClientView/LeaveButton" to="." method="_on_leave_pressed"]
+[connection signal="pressed" from="ChoiceView/Column/HostButton" to="." method="_on_host_pressed"]
+[connection signal="pressed" from="ChoiceView/Column/JoinButton" to="." method="_on_join_pressed"]
+[connection signal="pressed" from="ChoiceView/Column/NetworkButton" to="." method="_on_network_toggle_pressed"]
+[connection signal="pressed" from="HostView/Column/PlayerRow/InviteButton" to="." method="_on_invite_pressed"]
+[connection signal="pressed" from="HostView/Column/Buttons/StartButton" to="." method="_on_start_pressed"]
+[connection signal="pressed" from="HostView/Column/Buttons/CancelButton" to="." method="_on_leave_pressed"]
+[connection signal="pressed" from="JoinView/Column/ConnectButton" to="." method="_on_connect_pressed"]
+[connection signal="pressed" from="ClientView/Column/LeaveButton" to="." method="_on_leave_pressed"]

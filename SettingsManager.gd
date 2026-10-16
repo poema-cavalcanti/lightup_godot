@@ -11,6 +11,7 @@ extends Node
 const SAVE_PATH: String = "user://settings.cfg"
 const SAVE_SECTION: String = "display"
 const CONTROLS_SECTION: String = "controls"
+const PLAYER_SECTION: String = "player"
 
 const SIZE_PRESETS: Array[Vector2i] = [
 	Vector2i(1024, 576),
@@ -48,6 +49,7 @@ const DEFAULT_KEY_BINDINGS: Dictionary = {
 var is_fullscreen: bool = false
 var window_size: Vector2i = DEFAULT_WINDOW_SIZE
 var key_bindings: Dictionary = DEFAULT_KEY_BINDINGS.duplicate()
+var player_name: String = ""  # the name typed in the multiplayer lobby; "" = use the Steam name / "Player N" (see NetworkManager.local_player_name)
 
 func _ready() -> void:
 	_load_settings()
@@ -63,6 +65,7 @@ func _load_settings() -> void:
 		window_size = Vector2i(saved_width, saved_height)
 		for action: String in KEY_BINDING_ACTIONS:
 			key_bindings[action] = config.get_value(CONTROLS_SECTION, action, DEFAULT_KEY_BINDINGS[action])
+		player_name = str(config.get_value(PLAYER_SECTION, "name", ""))
 
 func _save_settings() -> void:
 	var config: ConfigFile = ConfigFile.new()
@@ -71,6 +74,7 @@ func _save_settings() -> void:
 	config.set_value(SAVE_SECTION, "window_height", window_size.y)
 	for action: String in KEY_BINDING_ACTIONS:
 		config.set_value(CONTROLS_SECTION, action, key_bindings[action])
+	config.set_value(PLAYER_SECTION, "name", player_name)
 	var save_result: Error = config.save(SAVE_PATH)
 	if save_result != OK:
 		push_error("Failed to save settings: %s" % error_string(save_result))
@@ -94,6 +98,12 @@ func set_window_size(new_size: Vector2i) -> void:
 	_save_settings()
 	if not is_fullscreen:
 		get_window().size = window_size
+
+func set_player_name(new_name: String) -> void:
+	if new_name == player_name:
+		return
+	player_name = new_name
+	_save_settings()
 
 func get_key_binding(action: String) -> Key:
 	return key_bindings.get(action, DEFAULT_KEY_BINDINGS.get(action, KEY_NONE))

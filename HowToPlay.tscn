@@ -1,34 +1,49 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://byiagmpv25h5r"]
 
-[ext_resource type="Script" path="res://HowToPlay.gd" id="1"]
+[ext_resource type="Script" uid="uid://b62jmranx3ej0" path="res://HowToPlay.gd" id="1"]
+[ext_resource type="Theme" uid="uid://cdr1dnof7psgh" path="res://MenuTheme.tres" id="99_menutheme"]
+[ext_resource type="Script" path="res://SheetAnimation.gd" id="2_sheetanim"]
+[ext_resource type="Texture2D" path="res://assets/wall_0_valid.png" id="w0v"]
+[ext_resource type="Texture2D" path="res://assets/wall_0_invalid.png" id="w0i"]
+[ext_resource type="Texture2D" path="res://assets/wall_1_valid.png" id="w1v"]
+[ext_resource type="Texture2D" path="res://assets/wall_1_invalid.png" id="w1i"]
+[ext_resource type="Texture2D" path="res://assets/wall_2_valid.png" id="w2v"]
+[ext_resource type="Texture2D" path="res://assets/wall_2_invalid.png" id="w2i"]
+[ext_resource type="Texture2D" path="res://assets/wall_3_valid.png" id="w3v"]
+[ext_resource type="Texture2D" path="res://assets/wall_3_invalid.png" id="w3i"]
+[ext_resource type="Texture2D" path="res://assets/wall_4_valid.png" id="w4v"]
+[ext_resource type="Texture2D" path="res://assets/wall_4_invalid.png" id="w4i"]
+[ext_resource type="Texture2D" path="res://assets/puzzle_how_to.png" id="puzzle_how_to"]
 
-[node name="HowToPlay" type="Control"]
+[node name="HowToPlay" type="Control" unique_id=1257476855]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("99_menutheme")
 script = ExtResource("1")
 
-[node name="BackButton" type="Button" parent="."]
+[node name="BackButton" type="Button" parent="." unique_id=828152660]
 layout_mode = 0
 offset_left = 20.0
 offset_top = 16.0
-offset_right = 140.0
-offset_bottom = 56.0
+offset_right = 170.0
+offset_bottom = 72.0
 text = "Back"
 
-[node name="TitleLabel" type="Label" parent="."]
+[node name="TitleLabel" type="Label" parent="." unique_id=1303646122]
 layout_mode = 0
-offset_left = 20.0
-offset_top = 66.0
-offset_right = 300.0
-offset_bottom = 106.0
+offset_left = 200.0
+offset_top = 24.0
+offset_right = 480.0
+offset_bottom = 64.0
 theme_override_font_sizes/font_size = 28
 text = "How to Play"
+vertical_alignment = 1
 
-[node name="Scroll" type="ScrollContainer" parent="."]
+[node name="Scroll" type="ScrollContainer" parent="." unique_id=1878244518]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -38,7 +53,7 @@ grow_horizontal = 2
 grow_vertical = 2
 horizontal_scroll_mode = 0
 
-[node name="Margin" type="MarginContainer" parent="Scroll"]
+[node name="Margin" type="MarginContainer" parent="Scroll" unique_id=476252756]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/margin_left = 60
@@ -46,40 +61,218 @@ theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 60
 theme_override_constants/margin_bottom = 40
 
-[node name="Content" type="VBoxContainer" parent="Scroll/Margin"]
+[node name="Content" type="VBoxContainer" parent="Scroll/Margin" unique_id=335408808]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="RulesHeading" type="Label" parent="Scroll/Margin/Content"]
+[node name="RulesHeading" type="Label" parent="Scroll/Margin/Content" unique_id=124046657]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "The rules"
 
-[node name="RulesBody" type="Label" parent="Scroll/Margin/Content"]
+[node name="RulesBody" type="Label" parent="Scroll/Margin/Content" unique_id=1046063290]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 15
-text = "Light Up is played on a grid of black and white cells. Your goal is to place light bulbs on white cells so that every white cell is lit.\n\nA bulb lights every cell in its row and column, in all four directions, until a black cell (or the edge of the grid) blocks the light.\n\nNo bulb may light up another bulb. If two bulbs can see each other, that's not allowed.\n\nSome black cells have a number in them. That number tells you exactly how many bulbs must be placed on the white cells directly touching that black cell's edges (up, down, left, right) -- no more, no fewer.\n\nThe puzzle is solved once every white cell is lit, no two bulbs see each other, and every numbered black cell has exactly the right number of bulbs next to it.\n\nWatch out: leaving two bulbs lighting each other unresolved for 5 seconds spawns an enemy at the conflict, and another every 5 seconds it stays unresolved. Enemies walk toward the nearest player and attack when adjacent. Solving the puzzle clears every enemy on the board.\n\nEach level also has a 5-minute clock. If it runs out while any tile is still unlit, a boss spawns with 50 health -- it can melee when adjacent or shoot at range along a clear row or column, but its ranged attack can't go through walls. Correctly satisfying a numbered clue adds 30 seconds to that clock the first time you get it right, so careful, correct play buys you breathing room."
+text = "Light Up is played on a grid of floor and wall cells. Your goal is to place lights on floor cells so that every floor cell is lit.
+
+A light lights every floor cell in its row and column, in all four directions, until a wall cell (or the edge of the grid) blocks the light.
+
+Some walls have a number of light holders in them. That number tells you exactly how many lights must be placed on the floor cells directly touching that wall cell's edges (up, down, left, right) -- no more, no fewer. If there is a cloth with a NO symbol covering the wall then no lights must be placed directly touching that wall cell's edges."
 autowrap_mode = 2
 
-[node name="Spacer1" type="Control" parent="Scroll/Margin/Content"]
+[node name="WallClueTable" type="GridContainer" parent="Scroll/Margin/Content"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/h_separation = 32
+theme_override_constants/v_separation = 12
+columns = 2
+
+[node name="ValidHeader" type="Label" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.85, 0.5, 1)
+theme_override_font_sizes/font_size = 18
+text = "Valid"
+horizontal_alignment = 1
+
+[node name="InvalidHeader" type="Label" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.45, 0.45, 1)
+theme_override_font_sizes/font_size = 18
+text = "Invalid"
+horizontal_alignment = 1
+
+[node name="Wall0Valid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 192)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("w0v")
+frames = 6
+fps = 1.0
+
+[node name="Wall0Invalid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 192)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("w0i")
+frames = 7
+fps = 1.0
+
+[node name="Wall1Valid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 192)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("w1v")
+frames = 4
+fps = 1.0
+
+[node name="Wall1Invalid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 192)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("w1i")
+frames = 13
+fps = 1.0
+
+[node name="Wall2Valid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 192)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("w2v")
+frames = 6
+fps = 1.0
+
+[node name="Wall2Invalid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 192)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("w2i")
+frames = 11
+fps = 1.0
+
+[node name="Wall3Valid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 192)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("w3v")
+frames = 4
+fps = 1.0
+
+[node name="Wall3Invalid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 192)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("w3i")
+frames = 13
+fps = 1.0
+
+[node name="Wall4Valid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 192)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("w4v")
+frames = 1
+fps = 1.0
+
+[node name="Wall4Invalid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 192)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("w4i")
+frames = 12
+fps = 1.0
+
+[node name="RulesBodyContinued" type="Label" parent="Scroll/Margin/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 15
+text = "No light may light up another light. If two lights can see each other, that's not allowed.
+
+Watch out: leaving two lights lighting each other for 5 seconds spawns an enemy at the conflict, and another every 5 seconds that stays unresolved. Enemies walk toward the nearest player and attack when adjacent.
+
+Each level also has a 5-minute clock. If it runs out while any floor tile is still unlit, a boss spawns -- it can melee when adjacent or shoot at range along a clear row or column, but its ranged attack can't go through walls. Correctly satisfying a numbered clue adds 30 seconds to that clock the first time you get it right, so careful, correct play buys you breathing room.
+
+Solving the puzzle clears every enemy on the board.
+
+The puzzle is solved once every floor cell is lit, no two lights see each other, and every numbered wall cell has exactly the right number of lights next to it."
+autowrap_mode = 2
+
+[node name="PuzzleExample" type="TextureRect" parent="Scroll/Margin/Content"]
+custom_minimum_size = Vector2(448, 448)
+layout_mode = 2
+size_flags_horizontal = 4
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("puzzle_how_to")
+frames = 2
+fps = 0.7
+
+[node name="Spacer1" type="Control" parent="Scroll/Margin/Content" unique_id=1063259775]
 custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
 
-[node name="ControlsHeading" type="Label" parent="Scroll/Margin/Content"]
+[node name="ControlsHeading" type="Label" parent="Scroll/Margin/Content" unique_id=1993657413]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Controls"
 
-[node name="ControlsBody" type="Label" parent="Scroll/Margin/Content"]
+[node name="ControlsBody" type="Label" parent="Scroll/Margin/Content" unique_id=1772556937]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 15
-text = "{move_up}/{move_left}/{move_down}/{move_right}  --  walk your player character around the grid, one cell at a time. Black cells are walls -- you can't walk through them.\n\n{place_light}  --  place a bulb at your feet, or pick it back up if one's already there.\n\n{attack}  --  attack an enemy in an adjacent cell (5 damage; normal enemies have 10 health so two hits clears one, the boss has 50).\n\n{block} (hold)  --  block: takes 25% less melee damage and no ranged damage while held, but you can't attack while blocking.\n\nF11  --  toggle fullscreen, any time.\n\nEscape  --  pause menu (singleplayer only pauses countdowns; in multiplayer it's just your own local menu). Movement, placing a light, attacking, and blocking can all be rebound from the Settings screen.\n\nYou have 100 health. A normal enemy deals 5 damage per hit when adjacent; the boss deals 10 melee or 5 at range. If your health reaches 0 you're defeated and can't act -- in multiplayer you respawn after 10 seconds as long as at least one teammate is still standing; if everyone is defeated at once, only a Reset brings the board back. In singleplayer a defeat needs a Reset too.\n\nIn multiplayer, everyone shares one board and moves independently with their own controls -- your own avatar has a white ring around it so you can tell it apart from your teammates'."
+text = "{move_up}/{move_left}/{move_down}/{move_right}  --  walk your player character around the grid, one cell at a time. Black cells are walls -- you can't walk through them.
+
+{place_light}  --  place a light at your feet, or pick it back up if one's already there.
+
+{attack}  --  attack an enemy in an adjacent cell.
+
+{block} (hold)  --  block: takes less melee damage and no ranged damage while held, but you can't attack while blocking.
+
+F11  --  toggle fullscreen, any time.
+
+Escape  --  pause menu (singleplayer only pauses countdowns; in multiplayer it's just your own local menu). Movement, placing a light, attacking, and blocking can all be rebound from the Settings screen.
+
+You have 100 health. If your health reaches 0 you're defeated and can't act. In singleplayer you can Reset the board and Try Again -- in multiplayer you respawn after 10 seconds as long as at least one teammate is still standing; if everyone is defeated at once, Reset the board to Try Again.
+
+In multiplayer, everyone shares one board and moves independently with their own controls -- your own avatar has a white ring around it so you can tell it apart from your teammates'."
 autowrap_mode = 2
 
-[node name="Spacer2" type="Control" parent="Scroll/Margin/Content"]
+[node name="Spacer2" type="Control" parent="Scroll/Margin/Content" unique_id=723167347]
 custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
 

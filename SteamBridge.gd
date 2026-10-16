@@ -90,6 +90,12 @@ func _notification(what: int) -> void:
 
 # --- Public API -------------------------------------------------------------
 
+# The local player's Steam display name ("" when Steam isn't running).
+func persona_name() -> String:
+	if not initialized or steam == null:
+		return ""
+	return str(steam.getPersonaName())
+
 func create_lobby(max_members: int) -> bool:
 	if not initialized:
 		return false

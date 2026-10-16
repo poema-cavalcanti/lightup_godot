@@ -19,9 +19,6 @@ extends RefCounted
 #   5. Try removing each clue (random order); keep it removed only if the
 #      puzzle still has exactly one solution -- so not every black cell
 #      ends up numbered, like a real puzzle.
-#
-# WHITE/BLACK must stay numerically in sync with Game.gd's CellType enum
-# and Solver.gd's constants (WHITE=0, BLACK=1).
 # ---------------------------------------------------------------------------
 
 const MAX_LAYOUT_ATTEMPTS: int = 1000

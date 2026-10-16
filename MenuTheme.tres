@@ -1,0 +1,69 @@
+[gd_resource type="Theme" format=3 uid="uid://cdr1dnof7psgh"]
+
+[ext_resource type="Texture2D" uid="uid://vndaq251st74" path="res://assets/main_menu_buttons.png" id="1_sheet"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_disabled"]
+content_margin_left = 44.0
+content_margin_top = 4.0
+content_margin_right = 16.0
+content_margin_bottom = 18.0
+texture = ExtResource("1_sheet")
+texture_margin_left = 34.0
+texture_margin_top = 36.0
+texture_margin_right = 10.0
+texture_margin_bottom = 17.0
+region_rect = Rect2(0, 1, 192, 62)
+modulate_color = Color(0.65, 0.65, 0.7, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_focus"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_hover"]
+content_margin_left = 44.0
+content_margin_top = 4.0
+content_margin_right = 16.0
+content_margin_bottom = 18.0
+texture = ExtResource("1_sheet")
+texture_margin_left = 34.0
+texture_margin_top = 36.0
+texture_margin_right = 10.0
+texture_margin_bottom = 17.0
+region_rect = Rect2(0, 65, 192, 62)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_clicked"]
+content_margin_left = 44.0
+content_margin_top = 4.0
+content_margin_right = 16.0
+content_margin_bottom = 18.0
+texture = ExtResource("1_sheet")
+texture_margin_left = 34.0
+texture_margin_top = 36.0
+texture_margin_right = 10.0
+texture_margin_bottom = 17.0
+region_rect = Rect2(0, 129, 192, 62)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_normal"]
+content_margin_left = 44.0
+content_margin_top = 4.0
+content_margin_right = 16.0
+content_margin_bottom = 18.0
+texture = ExtResource("1_sheet")
+texture_margin_left = 34.0
+texture_margin_top = 36.0
+texture_margin_right = 10.0
+texture_margin_bottom = 17.0
+region_rect = Rect2(0, 1, 192, 62)
+
+[resource]
+Button/colors/font_color = Color(0.92, 0.93, 0.97, 1)
+Button/colors/font_disabled_color = Color(0.6, 0.62, 0.68, 0.8)
+Button/colors/font_focus_color = Color(0.92, 0.93, 0.97, 1)
+Button/colors/font_hover_color = Color(0.97, 0.98, 1, 1)
+Button/colors/font_hover_pressed_color = Color(0.114, 0.11, 0.169, 1)
+Button/colors/font_pressed_color = Color(0.114, 0.11, 0.169, 1)
+Button/font_sizes/font_size = 18
+Button/styles/disabled = SubResource("StyleBoxTexture_disabled")
+Button/styles/focus = SubResource("StyleBoxEmpty_focus")
+Button/styles/hover = SubResource("StyleBoxTexture_hover")
+Button/styles/hover_pressed = SubResource("StyleBoxTexture_clicked")
+Button/styles/normal = SubResource("StyleBoxTexture_normal")
+Button/styles/pressed = SubResource("StyleBoxTexture_clicked")

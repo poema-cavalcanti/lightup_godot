@@ -27,6 +27,7 @@ extends Node
 @onready var health_label: Label = %HealthLabel
 @onready var gold_stat: Control = %GoldStat
 @onready var gold_label: Label = %GoldLabel
+@onready var players_stat: HBoxContainer = %PlayersStat  # multiplayer only: one PlayerIcon per player
 
 @onready var hamburger_button: Button = %HamburgerButton
 @onready var combat_status_label: Label = %CombatStatusLabel
@@ -36,6 +37,8 @@ extends Node
 @onready var shop_button: Button = %ShopButton
 @onready var try_again_button: Button = %TryAgainButton
 @onready var earnings_panel: Control = %EarningsPanel  # the post-level summary (EarningsPanel.tscn)
+
+const PLAYER_ICON_SCENE: PackedScene = preload("res://PlayerIcon.tscn")
 
 var game: Node2D
 
@@ -75,7 +78,23 @@ func setup(game_ref: Node2D, show_admin_buttons: bool) -> void:
 		shop_button.pressed.connect(game.shop_mgr.open_shop)
 		PixelButton.apply(shop_button)
 
+	_build_player_icons()
+
 	update_stats()
+
+# Multiplayer: a circle per player in their board colour; hover for the name. (The roster is frozen
+# at match start, so this matches player indices for the whole match.)
+func _build_player_icons() -> void:
+	if not NetworkManager.is_multiplayer:
+		players_stat.queue_free()
+		return
+	var roster: Array = NetworkManager.player_roster()
+	var my_slot: int = roster.find(game.multiplayer.get_unique_id())
+	for player_index in range(roster.size()):
+		var icon: PlayerIcon = PLAYER_ICON_SCENE.instantiate()
+		players_stat.add_child(icon)
+		var display_name: String = NetworkManager.display_name_for_player(player_index)
+		icon.setup(player_index, display_name + (" (You)" if player_index == my_slot else ""))
 
 func _keep_if(node: Control, keep: bool) -> Control:
 	if keep:

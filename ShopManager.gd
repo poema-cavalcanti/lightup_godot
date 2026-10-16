@@ -2,12 +2,13 @@ extends RefCounted
 
 # ---------------------------------------------------------------------------
 # Shopping in Endless Mode and multiplayer (the campaign shops in Town.tscn
-# with CampaignManager's own gold and inventory). Split out of Game.gd like the
+# with CampaignManager's own gold and inventory; multiplayer shops in the
+# shared Town too, via Town.gd's duck-typed use of this manager). Split out of Game.gd like the
 # other managers -- operates on shared state via the `game` back-reference,
 # and Game.gd holds the thin @rpc wrappers that call into here.
 #
 # The shop is a window (ShopPanel.tscn) opened from the Shop button on the
-# post-solve summary screen. Every player has their OWN gold and items
+# post-solve summary screen (Endless) or from the shop door in the Town. Every player has their OWN gold and items
 # (game.player_gold / game.player_inventory, index == player_index): the
 # level's earnings are paid to everyone in full, but a purchase only ever
 # touches the buyer.
@@ -22,8 +23,7 @@ extends RefCounted
 #      (_sync_purchase), applied on every peer. Absolute values, not deltas, so
 #      a repeated message can't double-charge. If it's not, only the buyer is
 #      told why (_purchase_rejected).
-# Items are only recorded here for now: equipping them and their effects are
-# not wired up outside the campaign yet.
+# Equipping what's bought is LoadoutManager.gd's job.
 # ---------------------------------------------------------------------------
 
 const SHOP_PANEL_SCENE: PackedScene = preload("res://ShopPanel.tscn")
@@ -36,7 +36,7 @@ var panel: CanvasLayer = null
 func _init(game_ref: Node2D) -> void:
 	game = game_ref
 
-# Called once from GameUIManager._build_ui(), only for Endless / multiplayer.
+# Called once from GameUIManager._build_ui() (singleplayer Endless only) and by Town.gd.
 func build_panel() -> void:
 	panel = SHOP_PANEL_SCENE.instantiate()
 	game.add_child(panel)
