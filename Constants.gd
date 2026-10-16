@@ -56,9 +56,6 @@ const PARCHMENT_COLOR: Color = Color(229.0 / 255.0, 214.0 / 255.0, 161.0 / 255.0
 const TITLE_BAR_COLOR: Color = Color(80.0 / 255.0, 169.0 / 255.0, 120.0 / 255.0)
 
 # --- Puzzle grid ---------------------------------------------------------
-# Cell types as stored in the {"type": int, "number": int} grid dictionaries
-# that Solver.gd / Generator.gd pass around. Game.gd's `enum CellType` has the
-# same values (WHITE = 0, BLACK = 1) and must stay in sync with these.
 const CELL_SIZE: int = 64
 const CELL_WHITE: int = 0
 const CELL_BLACK: int = 1
