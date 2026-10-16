@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://dq24bno0rgv21"]
+[gd_scene format=3 uid="uid://dm5rwj2lyc671"]
 
 [ext_resource type="Script" uid="uid://ct3ykikiktro7" path="res://Stats.gd" id="1"]
 [ext_resource type="Theme" uid="uid://cdr1dnof7psgh" path="res://MenuTheme.tres" id="99_menutheme"]
@@ -56,26 +56,27 @@ size_flags_horizontal = 0
 theme_override_constants/separation = 10
 alignment = 1
 
-[node name="LevelsHeading" type="Label" parent="Scroll/Margin/Content" unique_id=1122889312]
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "Best Level Times"
-
-[node name="LevelsText" type="Label" parent="Scroll/Margin/Content" unique_id=685380483]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 16
-text = "Level 1: not yet completed"
-
-[node name="Spacer" type="Control" parent="Scroll/Margin/Content" unique_id=1069900896]
-custom_minimum_size = Vector2(0, 14)
-layout_mode = 2
-
 [node name="EndingsLabel" type="Label" parent="Scroll/Margin/Content" unique_id=376058527]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Endings seen: 0/7"
+
+[node name="Spacer" type="Control" parent="Scroll/Margin/Content" unique_id=1069900896]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+
+[node name="LevelsHeading" type="Label" parent="Scroll/Margin/Content" unique_id=1122889312]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Best Level Times"
+
+[node name="LevelsTable" type="GridContainer" parent="Scroll/Margin/Content" unique_id=823176994]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 40
+theme_override_constants/v_separation = 6
+columns = 3
 
 [node name="Spacer2" type="Control" parent="Scroll/Margin/Content" unique_id=842324856]
 custom_minimum_size = Vector2(0, 14)
@@ -86,11 +87,11 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Endless Mode"
 
-[node name="EndlessText" type="Label" parent="Scroll/Margin/Content" unique_id=1631327801]
+[node name="EndlessTable" type="GridContainer" parent="Scroll/Margin/Content" unique_id=1269690049]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
-text = "Longest streak: 0
-Best time survived: --:--"
+theme_override_constants/h_separation = 40
+theme_override_constants/v_separation = 6
+columns = 2
 
 [connection signal="pressed" from="BackButton" to="." method="_on_back_pressed"]
