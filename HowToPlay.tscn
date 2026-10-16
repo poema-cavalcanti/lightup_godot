@@ -66,9 +66,107 @@ text = "Light Up is played on a grid of floor and wall cells. Your goal is to pl
 
 A light lights every floor cell in its row and column, in all four directions, until a wall cell (or the edge of the grid) blocks the light.
 
-Some walls have a number of light holders in them. That number tells you exactly how many lights must be placed on the floor cells directly touching that wall cell's edges (up, down, left, right) -- no more, no fewer. If there is a cloth with a NO symbol covering the wall then no lights must be placed directly toucing that wall cell's edges.
+Some walls have a number of light holders in them. That number tells you exactly how many lights must be placed on the floor cells directly touching that wall cell's edges (up, down, left, right) -- no more, no fewer. If there is a cloth with a NO symbol covering the wall then no lights must be placed directly touching that wall cell's edges."
+autowrap_mode = 2
 
-No light may light up another light. If two lights can see each other, that's not allowed.
+[node name="WallClueTable" type="GridContainer" parent="Scroll/Margin/Content"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/h_separation = 32
+theme_override_constants/v_separation = 12
+columns = 2
+
+[node name="ValidHeader" type="Label" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.85, 0.5, 1)
+theme_override_font_sizes/font_size = 18
+text = "Valid"
+horizontal_alignment = 1
+
+[node name="InvalidHeader" type="Label" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.45, 0.45, 1)
+theme_override_font_sizes/font_size = 18
+text = "Invalid"
+horizontal_alignment = 1
+
+[node name="Wall0Valid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(160, 160)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Wall0Invalid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(160, 160)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Wall1Valid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(160, 160)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Wall1Invalid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(160, 160)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Wall2Valid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(160, 160)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Wall2Invalid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(160, 160)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Wall3Valid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(160, 160)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Wall3Invalid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(160, 160)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Wall4Valid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(160, 160)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Wall4Invalid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(160, 160)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RulesBodyContinued" type="Label" parent="Scroll/Margin/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 15
+text = "No light may light up another light. If two lights can see each other, that's not allowed.
 
 Watch out: leaving two lights lighting each other for 5 seconds spawns an enemy at the conflict, and another every 5 seconds that stays unresolved. Enemies walk toward the nearest player and attack when adjacent.
 
