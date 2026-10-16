@@ -19,6 +19,7 @@ extends Node
 
 const PORT: int = 8910
 const MAX_PLAYERS: int = 4
+const MAX_NAME_LENGTH: int = 16
 
 signal player_list_changed
 signal connected_ok
@@ -39,6 +40,11 @@ var is_multiplayer: bool = false
 var is_host: bool = false
 
 var connected_peer_ids: Array = []
+# Display name per connected_peer_ids entry (same order). The host fills in "Player N" for
+# anyone who hasn't sent one, so everyone shows the same strings.
+var player_names: Array = []
+# Host only: peer id -> the (sanitized) name that peer sent; "" = none yet.
+var _peer_names: Dictionary = {}
 
 # True from the moment the host starts a match until the session ends.
 # While set, the host refuses new connections (the players array is fixed at
@@ -81,6 +87,8 @@ func host_game() -> bool:
 	is_multiplayer = true
 	is_host = true
 	connected_peer_ids = [1]  # host is always peer id 1 -> player_index 0
+	_peer_names = {1: local_player_name()}
+	_rebuild_player_names()
 	player_list_changed.emit()
 	return true
 
@@ -107,6 +115,8 @@ func leave_game() -> void:
 	SessionEconomy.carry = false
 	_last_request_msec.clear()
 	connected_peer_ids.clear()
+	player_names.clear()
+	_peer_names.clear()
 
 func local_ip_hint() -> String:
 	for local_address: String in IP.get_local_addresses():
@@ -127,19 +137,21 @@ func _on_peer_connected(peer_id: int) -> void:
 			multiplayer.multiplayer_peer.disconnect_peer(peer_id)
 			return  # ENet's max_clients should already prevent this
 		connected_peer_ids.append(peer_id)
-		rpc("_update_player_list", connected_peer_ids)
+		_broadcast_player_list()
 		if using_steam:
 			_verify_steam_peer(peer_id)
 
 func _on_peer_disconnected(peer_id: int) -> void:
 	if is_host:
 		connected_peer_ids.erase(peer_id)
+		_peer_names.erase(peer_id)
 		for key: String in _last_request_msec.keys():
 			if key.begins_with("%d:" % peer_id):
 				_last_request_msec.erase(key)
-		rpc("_update_player_list", connected_peer_ids)
+		_broadcast_player_list()
 
 func _on_connected_to_server() -> void:
+	rpc_id(1, "_submit_name", local_player_name())  # the host tells everyone (_update_player_list)
 	connected_ok.emit()
 
 func _on_connection_failed() -> void:
@@ -155,12 +167,54 @@ func _on_server_disconnected() -> void:
 	is_host = false
 	match_in_progress = false
 	connected_peer_ids.clear()
+	player_names.clear()
 	kicked_from_server.emit()
 
 @rpc("authority", "call_local", "reliable")
-func _update_player_list(peer_ids: Array) -> void:
+func _update_player_list(peer_ids: Array, names: Array) -> void:
 	connected_peer_ids = peer_ids
+	player_names = names
 	player_list_changed.emit()
+
+# Host: send everyone the roster and the names that go with it.
+func _broadcast_player_list() -> void:
+	_rebuild_player_names()
+	rpc("_update_player_list", connected_peer_ids, player_names)
+
+func _rebuild_player_names() -> void:
+	player_names = []
+	for player_index in range(connected_peer_ids.size()):
+		var chosen_name: String = _peer_names.get(connected_peer_ids[player_index], "")
+		player_names.append(chosen_name if chosen_name != "" else "Player %d" % (player_index + 1))
+
+# Client -> host, once, right after connecting. Stored even if the roster doesn't list the sender yet
+# (the join and this message can arrive in either order); _rebuild_player_names picks it up.
+@rpc("any_peer", "call_remote", "reliable")
+func _submit_name(raw_name: String) -> void:
+	if not is_host or match_in_progress:
+		return
+	var sender: int = multiplayer.get_remote_sender_id()
+	if sender <= 0 or not rate_limit_ok(sender, "name", 0.5):
+		return
+	_peer_names[sender] = sanitize_name(raw_name)
+	if connected_peer_ids.has(sender):
+		_broadcast_player_list()
+
+# Drops control characters, trims, and caps the length. "" if nothing usable is left.
+static func sanitize_name(raw_name: String) -> String:
+	var cleaned: String = ""
+	for character_index in range(raw_name.length()):
+		var code: int = raw_name.unicode_at(character_index)
+		if code >= 32 and code != 127:
+			cleaned += raw_name[character_index]
+	return cleaned.strip_edges().left(MAX_NAME_LENGTH)
+
+# This player's lobby name: what they typed (Settings), else their Steam name, else "" (the host assigns "Player N").
+func local_player_name() -> String:
+	var chosen_name: String = sanitize_name(SettingsManager.player_name)
+	if chosen_name == "":
+		chosen_name = sanitize_name(SteamBridge.persona_name())
+	return chosen_name
 
 # --- Steam transport -----------------------------------------------------
 # Flow (per the GodotSteam lobby + MultiplayerPeer tutorials):
@@ -221,6 +275,8 @@ func _on_steam_lobby_created(_new_lobby_id: int) -> void:
 	is_multiplayer = true
 	is_host = true
 	connected_peer_ids = [1]  # host is always peer id 1 -> player_index 0
+	_peer_names = {1: local_player_name()}
+	_rebuild_player_names()
 	player_list_changed.emit()
 	steam_host_ready.emit()
 

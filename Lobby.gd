@@ -1,7 +1,8 @@
 extends MenuScreen
 
 # The four screens of the lobby (choice, hosting, joining, connected) are all
-# laid out in Lobby.tscn as sibling views; only one is visible at a time.
+# laid out in Lobby.tscn as sibling views; only one is visible at a time. The
+# hosting and connected screens also show the four player slots (LobbySlots.gd).
 # This script switches between them, fills in the dynamic text, and reacts to
 # NetworkManager. Two transports are supported: Steam (when the GodotSteam
 # extension is installed and Steam is running) and LAN / direct IP.
@@ -61,8 +62,8 @@ var use_steam: bool = false  # true = host/join through Steam; false = LAN / dir
 @onready var address_label: Label = %AddressLabel
 @onready var hint_label: Label = %HintLabel
 @onready var invite_button: Button = %InviteButton
-@onready var host_player_list_label: Label = %HostPlayerListLabel
-@onready var client_player_list_label: Label = %ClientPlayerListLabel
+@onready var slots: LobbySlots = %Slots
+@onready var name_input: LineEdit = %NameInput
 @onready var instruction_label: Label = %InstructionLabel
 @onready var ip_input: LineEdit = %IpInput
 @onready var status_label: Label = %StatusLabel  # the Join screen's status line
@@ -79,6 +80,11 @@ func _ready() -> void:
 	address_label_template = address_label.text
 	hint_label_template = hint_label.text
 	instruction_label_template = instruction_label.text
+
+	name_input.max_length = NetworkManager.MAX_NAME_LENGTH
+	name_input.text = SettingsManager.player_name if SettingsManager.player_name != "" else NetworkManager.local_player_name()
+	name_input.focus_exited.connect(_commit_name)
+	name_input.text_submitted.connect(func(_submitted: String) -> void: _commit_name())
 
 	NetworkManager.player_list_changed.connect(_on_player_list_changed)
 	NetworkManager.connected_ok.connect(_on_connected_ok)
@@ -111,6 +117,9 @@ func _show_view(view: View) -> void:
 	host_view.visible = view == View.HOST_WAITING
 	join_view.visible = view == View.JOIN_ENTRY
 	client_view.visible = view == View.CLIENT_WAITING
+	slots.visible = view == View.HOST_WAITING or view == View.CLIENT_WAITING
+	if slots.visible:
+		slots.reset()  # so everyone drops in fresh each time the screen opens
 
 	match view:
 		View.CHOICE:
@@ -128,33 +137,39 @@ func _show_view(view: View) -> void:
 				address_label.text = address_label_template.format({"ip": NetworkManager.local_ip_hint(), "port": NetworkManager.PORT})
 				hint_label.text = hint_label_template
 			invite_button.visible = use_steam
-			_refresh_player_list_labels()
+			_refresh_slots()
 		View.JOIN_ENTRY:
 			instruction_label.text = "Steam lobby ID (or accept a friend's invite):" if use_steam else instruction_label_template
 			ip_input.text = "" if use_steam else DEFAULT_JOIN_ADDRESS
 			ip_input.placeholder_text = "Paste lobby ID" if use_steam else ""
 			status_label.text = ""
 		View.CLIENT_WAITING:
-			_refresh_player_list_labels()
+			_refresh_slots()
 
-func _refresh_player_list_labels() -> void:
-	var player_lines: Array = []
+# Hands the roster to the slots row: one entry per connected player, in player-index order.
+# The names come from the host with the list (NetworkManager.player_names).
+func _refresh_slots() -> void:
+	var my_peer_id: int = multiplayer.get_unique_id()
+	var entries: Array = []
 	for player_index in range(NetworkManager.connected_peer_ids.size()):
-		var host_tag_suffix: String = " (Host)" if player_index == 0 else ""
-		var you_suffix: String = "  <- you" if NetworkManager.connected_peer_ids[player_index] == multiplayer.get_unique_id() else ""
-		player_lines.append("Player %d%s%s" % [player_index + 1, host_tag_suffix, you_suffix])
-	var list_text: String = "Connected (%d/%d):\n%s" % [
-		NetworkManager.connected_peer_ids.size(), NetworkManager.MAX_PLAYERS, "\n".join(player_lines)
-	]
-	host_player_list_label.text = list_text
-	client_player_list_label.text = list_text
+		var player_name: String = NetworkManager.player_names[player_index] if player_index < NetworkManager.player_names.size() else "Player %d" % (player_index + 1)
+		entries.append({
+			"name": player_name,
+			"is_host": player_index == 0,
+			"is_you": NetworkManager.connected_peer_ids[player_index] == my_peer_id,
+		})
+	slots.set_entries(entries)
+
+# Saves what's in the name box (called when it loses focus / Enter, and right before hosting or joining).
+func _commit_name() -> void:
+	SettingsManager.set_player_name(NetworkManager.sanitize_name(name_input.text))
 
 # ---------------------------------------------------------------------------
 # NetworkManager signal handlers
 # ---------------------------------------------------------------------------
 
 func _on_player_list_changed() -> void:
-	_refresh_player_list_labels()
+	_refresh_slots()
 
 func _on_connected_ok() -> void:
 	if current_view == View.JOIN_ENTRY:
@@ -186,6 +201,7 @@ func _on_steam_join_failed(reason: String) -> void:
 # ---------------------------------------------------------------------------
 
 func _on_host_pressed() -> void:
+	_commit_name()
 	if use_steam:
 		# The result arrives via steam_host_ready / steam_host_failed.
 		choice_status_label.text = "Creating Steam lobby..."
@@ -208,6 +224,7 @@ func _on_join_pressed() -> void:
 	_show_view(View.JOIN_ENTRY)
 
 func _on_connect_pressed() -> void:
+	_commit_name()
 	if use_steam:
 		var typed_lobby_id: int = ip_input.text.strip_edges().to_int()
 		if typed_lobby_id <= 0:

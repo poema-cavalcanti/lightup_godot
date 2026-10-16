@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cpoygqd532dgm" path="res://Lobby.gd" id="1"]
 [ext_resource type="Theme" uid="uid://cdr1dnof7psgh" path="res://MenuTheme.tres" id="99_menutheme"]
+[ext_resource type="Script" path="res://LobbySlots.gd" id="3_slots"]
 
 [node name="Lobby" type="Control" unique_id=246511401]
 layout_mode = 3
@@ -21,6 +22,21 @@ offset_top = 16.0
 offset_right = 170.0
 offset_bottom = 72.0
 text = "Back"
+
+[node name="Slots" type="Control" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -420.0
+offset_top = 76.0
+offset_right = 420.0
+offset_bottom = 376.0
+grow_horizontal = 2
+mouse_filter = 2
+script = ExtResource("3_slots")
 
 [node name="ChoiceView" type="Control" parent="." unique_id=1876336531]
 unique_name_in_owner = true
@@ -54,6 +70,21 @@ offset_right = 170.0
 offset_bottom = 450.0
 grow_horizontal = 2
 theme_override_constants/separation = 14
+
+[node name="NameLabel" type="Label" parent="ChoiceView/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Your name"
+horizontal_alignment = 1
+
+[node name="NameInput" type="LineEdit" parent="ChoiceView/Column"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+placeholder_text = "Enter a name"
+alignment = 1
+max_length = 16
 
 [node name="HostButton" type="Button" parent="ChoiceView/Column" unique_id=677170597]
 custom_minimum_size = Vector2(260, 56)
@@ -110,9 +141,9 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -170.0
-offset_top = 150.0
+offset_top = 392.0
 offset_right = 170.0
-offset_bottom = 450.0
+offset_bottom = 692.0
 grow_horizontal = 2
 theme_override_constants/separation = 14
 
@@ -134,14 +165,7 @@ autowrap_mode = 2
 
 [node name="PlayerRow" type="HBoxContainer" parent="HostView/Column" unique_id=785025922]
 layout_mode = 2
-
-[node name="HostPlayerListLabel" type="Label" parent="HostView/Column/PlayerRow" unique_id=1458796000]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 16
-text = "Connected (1/4):
-Player 1 (Host)  <- you"
+alignment = 1
 
 [node name="InviteButton" type="Button" parent="HostView/Column/PlayerRow" unique_id=2114896259]
 unique_name_in_owner = true
@@ -253,19 +277,11 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -170.0
-offset_top = 150.0
+offset_top = 392.0
 offset_right = 170.0
-offset_bottom = 450.0
+offset_bottom = 692.0
 grow_horizontal = 2
 theme_override_constants/separation = 14
-
-[node name="ClientPlayerListLabel" type="Label" parent="ClientView/Column" unique_id=1918666308]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 16
-text = "Connected (2/4):
-Player 1 (Host)
-Player 2  <- you"
 
 [node name="WaitingLabel" type="Label" parent="ClientView/Column" unique_id=246279306]
 layout_mode = 2
