@@ -2,6 +2,18 @@
 
 [ext_resource type="Script" uid="uid://b62jmranx3ej0" path="res://HowToPlay.gd" id="1"]
 [ext_resource type="Theme" uid="uid://cdr1dnof7psgh" path="res://MenuTheme.tres" id="99_menutheme"]
+[ext_resource type="Script" path="res://SheetAnimation.gd" id="2_sheetanim"]
+[ext_resource type="Texture2D" path="res://assets/wall_0_valid.png" id="w0v"]
+[ext_resource type="Texture2D" path="res://assets/wall_0_invalid.png" id="w0i"]
+[ext_resource type="Texture2D" path="res://assets/wall_1_valid.png" id="w1v"]
+[ext_resource type="Texture2D" path="res://assets/wall_1_invalid.png" id="w1i"]
+[ext_resource type="Texture2D" path="res://assets/wall_2_valid.png" id="w2v"]
+[ext_resource type="Texture2D" path="res://assets/wall_2_invalid.png" id="w2i"]
+[ext_resource type="Texture2D" path="res://assets/wall_3_valid.png" id="w3v"]
+[ext_resource type="Texture2D" path="res://assets/wall_3_invalid.png" id="w3i"]
+[ext_resource type="Texture2D" path="res://assets/wall_4_valid.png" id="w4v"]
+[ext_resource type="Texture2D" path="res://assets/wall_4_invalid.png" id="w4i"]
+[ext_resource type="Texture2D" path="res://assets/puzzle_how_to.png" id="puzzle_how_to"]
 
 [node name="HowToPlay" type="Control" unique_id=1257476855]
 layout_mode = 3
@@ -69,100 +81,140 @@ A light lights every floor cell in its row and column, in all four directions, u
 Some walls have a number of light holders in them. That number tells you exactly how many lights must be placed on the floor cells directly touching that wall cell's edges (up, down, left, right) -- no more, no fewer. If there is a cloth with a NO symbol covering the wall then no lights must be placed directly touching that wall cell's edges."
 autowrap_mode = 2
 
-[node name="WallClueTable" type="GridContainer" parent="Scroll/Margin/Content" unique_id=453109389]
+[node name="WallClueTable" type="GridContainer" parent="Scroll/Margin/Content"]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_constants/h_separation = 32
 theme_override_constants/v_separation = 12
 columns = 2
 
-[node name="ValidHeader" type="Label" parent="Scroll/Margin/Content/WallClueTable" unique_id=826373002]
-custom_minimum_size = Vector2(160, 0)
+[node name="ValidHeader" type="Label" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.45, 0.85, 0.5, 1)
 theme_override_font_sizes/font_size = 18
 text = "Valid"
 horizontal_alignment = 1
 
-[node name="InvalidHeader" type="Label" parent="Scroll/Margin/Content/WallClueTable" unique_id=785002768]
-custom_minimum_size = Vector2(160, 0)
+[node name="InvalidHeader" type="Label" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.45, 0.45, 1)
 theme_override_font_sizes/font_size = 18
 text = "Invalid"
 horizontal_alignment = 1
 
-[node name="Wall0Valid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable" unique_id=2096781543]
-texture_filter = 1
-custom_minimum_size = Vector2(160, 160)
+[node name="Wall0Valid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 192)
 layout_mode = 2
+texture_filter = 1
 expand_mode = 1
 stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("w0v")
+frames = 6
+fps = 1.0
 
-[node name="Wall0Invalid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable" unique_id=304996919]
-texture_filter = 1
-custom_minimum_size = Vector2(160, 160)
+[node name="Wall0Invalid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 192)
 layout_mode = 2
+texture_filter = 1
 expand_mode = 1
 stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("w0i")
+frames = 7
+fps = 1.0
 
-[node name="Wall1Valid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable" unique_id=1201934697]
-texture_filter = 1
-custom_minimum_size = Vector2(160, 160)
+[node name="Wall1Valid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 192)
 layout_mode = 2
+texture_filter = 1
 expand_mode = 1
 stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("w1v")
+frames = 4
+fps = 1.0
 
-[node name="Wall1Invalid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable" unique_id=1133093605]
-texture_filter = 1
-custom_minimum_size = Vector2(160, 160)
+[node name="Wall1Invalid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 192)
 layout_mode = 2
+texture_filter = 1
 expand_mode = 1
 stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("w1i")
+frames = 13
+fps = 1.0
 
-[node name="Wall2Valid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable" unique_id=1609961656]
-texture_filter = 1
-custom_minimum_size = Vector2(160, 160)
+[node name="Wall2Valid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 192)
 layout_mode = 2
+texture_filter = 1
 expand_mode = 1
 stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("w2v")
+frames = 6
+fps = 1.0
 
-[node name="Wall2Invalid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable" unique_id=373323418]
-texture_filter = 1
-custom_minimum_size = Vector2(160, 160)
+[node name="Wall2Invalid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 192)
 layout_mode = 2
+texture_filter = 1
 expand_mode = 1
 stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("w2i")
+frames = 11
+fps = 1.0
 
-[node name="Wall3Valid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable" unique_id=1734483387]
-texture_filter = 1
-custom_minimum_size = Vector2(160, 160)
+[node name="Wall3Valid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 192)
 layout_mode = 2
+texture_filter = 1
 expand_mode = 1
 stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("w3v")
+frames = 4
+fps = 1.0
 
-[node name="Wall3Invalid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable" unique_id=1778561431]
-texture_filter = 1
-custom_minimum_size = Vector2(160, 160)
+[node name="Wall3Invalid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 192)
 layout_mode = 2
+texture_filter = 1
 expand_mode = 1
 stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("w3i")
+frames = 13
+fps = 1.0
 
-[node name="Wall4Valid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable" unique_id=1808684991]
-texture_filter = 1
-custom_minimum_size = Vector2(160, 160)
+[node name="Wall4Valid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 192)
 layout_mode = 2
+texture_filter = 1
 expand_mode = 1
 stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("w4v")
+frames = 1
+fps = 1.0
 
-[node name="Wall4Invalid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable" unique_id=668545977]
-texture_filter = 1
-custom_minimum_size = Vector2(160, 160)
+[node name="Wall4Invalid" type="TextureRect" parent="Scroll/Margin/Content/WallClueTable"]
+custom_minimum_size = Vector2(192, 192)
 layout_mode = 2
+texture_filter = 1
 expand_mode = 1
 stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("w4i")
+frames = 12
+fps = 1.0
 
-[node name="RulesBodyContinued" type="Label" parent="Scroll/Margin/Content" unique_id=875600623]
+[node name="RulesBodyContinued" type="Label" parent="Scroll/Margin/Content"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 15
@@ -176,6 +228,18 @@ Solving the puzzle clears every enemy on the board.
 
 The puzzle is solved once every floor cell is lit, no two lights see each other, and every numbered wall cell has exactly the right number of lights next to it."
 autowrap_mode = 2
+
+[node name="PuzzleExample" type="TextureRect" parent="Scroll/Margin/Content"]
+custom_minimum_size = Vector2(448, 448)
+layout_mode = 2
+size_flags_horizontal = 4
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+script = ExtResource("2_sheetanim")
+sheet = ExtResource("puzzle_how_to")
+frames = 2
+fps = 0.7
 
 [node name="Spacer1" type="Control" parent="Scroll/Margin/Content" unique_id=1063259775]
 custom_minimum_size = Vector2(0, 16)
