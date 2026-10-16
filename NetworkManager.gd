@@ -45,6 +45,9 @@ var connected_peer_ids: Array = []
 var player_names: Array = []
 # Host only: peer id -> the (sanitized) name that peer sent; "" = none yet.
 var _peer_names: Dictionary = {}
+# Every peer: peer id -> the display name last announced for it. Unlike player_names (which tracks the live
+# lobby list and shifts when someone leaves) this is looked up by id, so it stays right for a running match.
+var peer_display_names: Dictionary = {}
 
 # True from the moment the host starts a match until the session ends.
 # While set, the host refuses new connections (the players array is fixed at
@@ -116,6 +119,7 @@ func leave_game() -> void:
 	_last_request_msec.clear()
 	connected_peer_ids.clear()
 	player_names.clear()
+	peer_display_names.clear()
 	_peer_names.clear()
 
 func local_ip_hint() -> String:
@@ -168,12 +172,14 @@ func _on_server_disconnected() -> void:
 	match_in_progress = false
 	connected_peer_ids.clear()
 	player_names.clear()
+	peer_display_names.clear()
 	kicked_from_server.emit()
 
 @rpc("authority", "call_local", "reliable")
 func _update_player_list(peer_ids: Array, names: Array) -> void:
 	connected_peer_ids = peer_ids
 	player_names = names
+	_remember_names()
 	player_list_changed.emit()
 
 # Host: send everyone the roster and the names that go with it.
@@ -186,6 +192,18 @@ func _rebuild_player_names() -> void:
 	for player_index in range(connected_peer_ids.size()):
 		var chosen_name: String = _peer_names.get(connected_peer_ids[player_index], "")
 		player_names.append(chosen_name if chosen_name != "" else "Player %d" % (player_index + 1))
+	_remember_names()
+
+func _remember_names() -> void:
+	for player_index in range(mini(connected_peer_ids.size(), player_names.size())):
+		peer_display_names[connected_peer_ids[player_index]] = player_names[player_index]
+
+# Name for a player index of the current roster (the frozen match order during a match).
+func display_name_for_player(player_index: int) -> String:
+	var roster: Array = player_roster()
+	if player_index < 0 or player_index >= roster.size():
+		return "Player %d" % (player_index + 1)
+	return peer_display_names.get(roster[player_index], "Player %d" % (player_index + 1))
 
 # Client -> host, once, right after connecting. Stored even if the roster doesn't list the sender yet
 # (the join and this message can arrive in either order); _rebuild_player_names picks it up.

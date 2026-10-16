@@ -222,8 +222,6 @@ func _update_combat_status_label() -> void:
 	if game.combat_status_label == null:
 		return
 	var status_lines: Array[String] = []
-	if NetworkManager.is_multiplayer:
-		status_lines.append("You are Player %d of %d" % [game.my_player_index + 1, game.players.size()])
 
 	var my_state: Dictionary = game.players[game.my_player_index]
 	var party_wiped: bool = game.player_mgr._all_players_defeated()
